@@ -1,4 +1,6 @@
 const { DB, Role } = require('../database/database.js');
+const request = require('supertest');
+const app = require('../service');
 
 function randomName() {
   return Math.random().toString(36).substring(2, 12);
@@ -9,10 +11,12 @@ async function createAdminUser() {
   user.name = randomName();
   user.email = user.name + '@admin.com';
 
-  await DB.addUser(user);
-
+  user = await DB.addUser(user);
   user.password = 'toomanysecrets';
-  return user;
+
+  const loginRes = await request(app).put('/api/auth').send(user);
+  const token = loginRes.body.token;
+  return {user, token};
 }
 
 module.exports = {

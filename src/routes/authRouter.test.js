@@ -15,9 +15,10 @@ describe('authRouter testing...', () => {
     testUserId = registerRes.body.user.id;
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await DB.deleteUser(testUserId);
   });
+
 
   test('login', async () => {
     const loginRes = await request(app).put('/api/auth').send(testUser);
@@ -37,6 +38,8 @@ describe('authRouter testing...', () => {
     const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
     expect(registerRes.body.user).toMatchObject(user);
     expect(password).toBe(testUser.password);
+
+    await DB.deleteUser(registerRes.body.user.id)
   });
 
   test('logout', async () => {
