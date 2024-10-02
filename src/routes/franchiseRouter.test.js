@@ -8,6 +8,7 @@ describe('franchiseRouter testing...', () => {
   let adminUser;
   let adminUserAuthToken;
   let franchiseId;
+  let linterError;
 
   beforeAll(async () => {
     const adminResponse = await createAdminUser();
