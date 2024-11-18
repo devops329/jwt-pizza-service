@@ -46,9 +46,9 @@ jobs:
             jwtSecret: '${{ secrets.JWT_SECRET }}',
             db: {
               connection: {
-                host: '127.0.0.1',
+                host: 'host.docker.internal',
                 user: 'root',
-                password: 'tempdbpassword',
+                password: '${{ secrets.DB_PASSWORD }}',
                 database: 'pizza',
                 connectTimeout: 60000,
               },
