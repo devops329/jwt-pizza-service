@@ -43,7 +43,7 @@ jobs:
       - name: Write config file
         run: |
           echo "module.exports = {
-            jwtSecret: '${{ secrets.JWT_SECRET }}',
+            jwtSecret: '${{ github.event.inputs.JWT_SECRET }}',
             db: {
               connection: {
                 host: '127.0.0.1',
@@ -56,7 +56,7 @@ jobs:
             },
             factory: {
               url: 'https://pizza-factory.cs329.click',
-              apiKey: '${{ secrets.FACTORY_API_KEY }}',
+              apiKey: '${{ github.event.inputs.FACTORY_API_KEY }}',
             },
           };" > src/config.js
 
@@ -73,7 +73,10 @@ jobs:
       - name: Update coverage
         run: |
           coverage_pct=$(grep -o '"pct":[0-9.]*' coverage/coverage-summary.json | head -n 1 | cut -d ':' -f 2)
+          echo "Coverage Percentage: $coverage_pct"
           color=$(echo "$coverage_pct < 80" | bc -l | awk '{if ($1) print "yellow"; else print "green"}')
+          echo "Badge Color: $color"
+          echo "Final Badge Url: https://img.shields.io/badge/Coverage-$coverage_pct%25-$color"
           curl https://img.shields.io/badge/Coverage-$coverage_pct%25-$color -o coverageBadge.svg
           git config user.name github-actions
           git config user.email github-actions@github.com
