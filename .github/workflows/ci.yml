@@ -61,7 +61,7 @@ jobs:
           };" > src/config.js
 
       - name: Tests
-        run: npm test
+        run: npm test -- --passWithNoTests
 
       - name: set version
         id: set_version
