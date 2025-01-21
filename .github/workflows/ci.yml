@@ -73,6 +73,9 @@ jobs:
       - name: Update coverage
         run: |
           coverage_pct=$(grep -o '"pct":[0-9.]*' coverage/coverage-summary.json | head -n 1 | cut -d ':' -f 2)
+          if [ -z "$coverage_pct" ]; then
+          coverage_pct=0
+          fi
           echo "Coverage Percentage: $coverage_pct"
           color=$(echo "$coverage_pct < 80" | bc -l | awk '{if ($1) print "yellow"; else print "green"}')
           echo "Badge Color: $color"
