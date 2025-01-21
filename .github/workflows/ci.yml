@@ -76,10 +76,6 @@ jobs:
           if [ -z "$coverage_pct" ]; then
           coverage_pct=0
           fi
-          if [ "$coverage_pct" -lt 80 ]; then
-          echo "Coverage is less than 80%"
-          exit 1
-          fi
           echo "Coverage Percentage: $coverage_pct"
           color=$(echo "$coverage_pct < 80" | bc -l | awk '{if ($1) print "yellow"; else print "green"}')
           echo "Badge Color: $color"
@@ -90,3 +86,7 @@ jobs:
           git add .
           git commit -m "generated"
           git push
+          if [ "$coverage_pct" -lt 80 ]; then
+          echo "Coverage is less than 80%"
+          exit 1
+          fi
