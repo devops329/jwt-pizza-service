@@ -1,5 +1,7 @@
 const request = require("supertest");
 const app = require("../service");
+const { Role } = require("../model/model");
+const { DB } = require("../database/database");
 
 function getRandomString() {
   return Math.random().toString(36).substring(2, 12);
@@ -25,9 +27,23 @@ async function registerAndLogin() {
   return { user, token };
 }
 
+async function createAdminUser() {
+  const password = getRandomString();
+  let user = {
+    name: getRandomString(),
+    email: getRandomEmail(),
+    password,
+    roles: [{ role: Role.Admin }],
+  };
+
+  user = await DB.addUser(user);
+  return { ...user, password };
+}
+
 module.exports = {
   getRandomString,
   getRandomEmail,
   registerUser,
-  registerAndLogin
+  registerAndLogin,
+  createAdminUser,
 };

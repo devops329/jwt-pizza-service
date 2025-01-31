@@ -6,23 +6,11 @@ const {
   getRandomString,
   registerAndLogin,
   registerUser,
+  createAdminUser,
 } = require("../jest/jestHelpers");
 const { Role } = require("../model/model");
 
 let testUser, testUserAuthToken, testMenuItem;
-
-async function createAdminUser() {
-  const password = getRandomString();
-  let user = {
-    name: getRandomString(),
-    email: getRandomEmail(),
-    password,
-    roles: [{ role: Role.Admin }],
-  };
-
-  user = await DB.addUser(user);
-  return { ...user, password };
-}
 
 beforeAll(async () => {
   const { user, token } = await registerUser();
@@ -50,9 +38,7 @@ test("add menu item and check results", async () => {
     .send(testMenuItem);
   expect(addRes.status).toEqual(200);
 
-  const getRes = await request(app)
-    .get("/api/order/menu")
-    .set("Authorization", `Bearer ${testUserAuthToken}`);
+  const getRes = await request(app).get("/api/order/menu");
   expect(addRes.body).toMatchObject(getRes.body);
 
   const menu = addRes.body.map((item) => {
