@@ -1,37 +1,20 @@
 const request = require("supertest");
 const app = require("../service");
 const { DB } = require("../database/database");
+const {
+  registerUser,
+  getRandomEmail,
+  getRandomString,
+} = require("../jest/jestHelpers");
 
-const testUser = { name: "pizza diner", email: "reg@test.com", password: "a" };
-let testUserAuthToken;
-
-function getRandomString() {
-  return Math.random().toString(36).substring(2, 12);
-}
-
-function getRandomEmail() {
-  return getRandomString() + "@test.com";
-}
+let testUser, testUserAuthToken;
 
 const tokenRegex = /^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/;
 
-async function createAdminUser() {
-  const password = getRandomString();
-  let user = {
-    name: getRandomString(),
-    email: getRandomEmail(),
-    password,
-    roles: [{ role: Role.Admin }],
-  };
-
-  user = await DB.addUser(user);
-  return { ...user, password };
-}
-
 beforeEach(async () => {
-  testUser.email = getRandomEmail();
-  const registerRes = await request(app).post("/api/auth").send(testUser);
-  testUserAuthToken = registerRes.body.token;
+  const { user, token } = await registerUser();
+  testUser = user;
+  testUserAuthToken = token;
 });
 
 test("docs", async () => {
@@ -53,7 +36,7 @@ test("login", async () => {
 test("wrong password", async () => {
   const res = await request(app)
     .put("/api/auth")
-    .send({ ...testUser, password: "ab" });
+    .send({ ...testUser, password: "invalid-password" });
   expect(res.status).toBe(404);
 });
 
@@ -110,6 +93,7 @@ test("no token", async () => {
 
 test("user update", async () => {
   const loginRes = await request(app).put("/api/auth").send(testUser);
+  expect(loginRes.status).toEqual(200);
   const newInfo = { email: getRandomEmail(), password: getRandomString() };
   const updateRes = await request(app)
     .put(`/api/auth/${loginRes.body.user.id}`)
