@@ -15,5 +15,8 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.7",
     "supertest": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14"
   }
 }
