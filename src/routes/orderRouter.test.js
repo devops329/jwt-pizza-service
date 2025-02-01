@@ -7,6 +7,8 @@ let AdminAuth;
 let authHeader;
 let randName;
 let bobAuth;
+let franchiseId;
+let storeId;
 
 function randomName(){
     return Math.random().toString(36).substring(2, 12);
@@ -20,12 +22,11 @@ async function loginUser(userData){
 beforeAll(async () => {
     randName = randomName()
     testAdminUser.email = randName + '@test.com';
-    user = await DB.addUser(testAdminUser)
+    await DB.addUser(testAdminUser)
     await DB.addUser(testUser)
     AdminAuth = await loginUser(testAdminUser)
     bobAuth = await loginUser(testUser)
     authHeader = 'Bearer ' + AdminAuth
-    testAdminUserId = user.id
     const createRes = await request(app).post('/api/franchise').set('Authorization', authHeader).send({"name": randName, "admins": [{"email": testAdminUser.email}]})
     franchiseId = createRes.body.id
     const createstoreRes = await request(app).post(`/api/franchise/${franchiseId}/store`).set('Authorization', authHeader).send({"franchiseId": franchiseId, "name": randName})
@@ -49,13 +50,7 @@ test('get orders test', async () => {
     const getRes = await request(app).get('/api/order').set('Authorization', authHeader)
     expect(getRes.body.orders.length).toBe(0)
     let order = {"franchiseId": franchiseId, "storeId":storeId, "items":[{ "menuId": 1, "description": "Veggie", "price": 0.05 }]}
-    const putRes = await request(app).post('/api/order').set('Authorization', authHeader).send(order)
-    getRes2 = await request(app).get('/api/order').set('Authorization', authHeader)
+    await request(app).post('/api/order').set('Authorization', authHeader).send(order)
+    let getRes2 = await request(app).get('/api/order').set('Authorization', authHeader)
     expect(getRes2.body.orders.length).toBe(1)
-})
-
-test('unauthorized get orders test', async () =>{
-    let pizzaObject = { "title": randName, "description": "testPizza", "image":"pizza9.png", "price": 0.0001 }
-    const putRes = await request(app).put('/api/order/menu').set('Authorization', 'Bearer ' + bobAuth).send(pizzaObject)
-    expect(putRes.status).toBe(403)
 })

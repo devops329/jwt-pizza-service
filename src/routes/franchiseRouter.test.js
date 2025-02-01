@@ -8,6 +8,8 @@ let authHeader;
 let randName;
 let franchiseId;
 let bobAuth;
+let user;
+let testAdminUserId;
 
 function randomName(){
     return Math.random().toString(36).substring(2, 12);

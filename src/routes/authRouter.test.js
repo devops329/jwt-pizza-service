@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../service');
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
+let testUserId;
 
 beforeEach(async () => {
   testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
