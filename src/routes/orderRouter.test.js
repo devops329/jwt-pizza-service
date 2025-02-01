@@ -6,7 +6,6 @@ const testUser = {name: 'Bob', email: 'reg@test.com', password: 'testpassword', 
 let AdminAuth;
 let authHeader;
 let randName;
-let bobAuth;
 let franchiseId;
 let storeId;
 
@@ -25,7 +24,6 @@ beforeAll(async () => {
     await DB.addUser(testAdminUser)
     await DB.addUser(testUser)
     AdminAuth = await loginUser(testAdminUser)
-    bobAuth = await loginUser(testUser)
     authHeader = 'Bearer ' + AdminAuth
     const createRes = await request(app).post('/api/franchise').set('Authorization', authHeader).send({"name": randName, "admins": [{"email": testAdminUser.email}]})
     franchiseId = createRes.body.id
