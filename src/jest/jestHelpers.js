@@ -27,13 +27,13 @@ async function registerAndLogin() {
   return { user, token };
 }
 
-async function createAdminUser() {
+async function createUser(role, franchise) {
   const password = getRandomString();
   let user = {
     name: getRandomString(),
     email: getRandomEmail(),
     password,
-    roles: [{ role: Role.Admin }],
+    roles: [{ role, object: franchise }],
   };
 
   user = await DB.addUser(user);
@@ -45,5 +45,5 @@ module.exports = {
   getRandomEmail,
   registerUser,
   registerAndLogin,
-  createAdminUser,
+  createUser,
 };

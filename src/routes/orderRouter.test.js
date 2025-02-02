@@ -6,7 +6,7 @@ const {
   getRandomString,
   registerAndLogin,
   registerUser,
-  createAdminUser,
+  createUser,
 } = require("../jest/jestHelpers");
 const { Role } = require("../model/model");
 
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 test("add menu item and check results", async () => {
-  const adminUser = await createAdminUser();
+  const adminUser = await createUser(Role.Admin);
   const loginRes = await request(app).put("/api/auth").send(adminUser);
   expect(loginRes.status).toEqual(200);
 
