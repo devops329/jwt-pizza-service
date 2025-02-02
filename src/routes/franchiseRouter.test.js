@@ -56,6 +56,12 @@ async function createFranchiseAndStore() {
   return { loginRes, token, store, franchiseId, storeRes };
 }
 
+async function getCurrentFranchise(franchiseId) {
+  const res = await request(app).get(`/api/franchise`);
+  expect(res.status).toEqual(200);
+  return res.body.find((franchise) => franchise.id === franchiseId);
+}
+
 beforeAll(async () => {
   const { user, token } = await registerUser();
   testUser = user;
@@ -132,11 +138,29 @@ test("delete store", async () => {
     .set("Authorization", `Bearer ${token}`);
   expect(deleteRes.status).toEqual(200);
 
-  const franchiseRes = await request(app).get(`/api/franchise`).send();
-  expect(franchiseRes.status).toEqual(200);
-  const currentFranchise = franchiseRes.body.find(
-    (franchise) => franchise.id === franchiseId
-  );
+  const currentFranchise = await getCurrentFranchise(franchiseId);
   expect(currentFranchise).toBeDefined();
   expect(currentFranchise.stores).not.toContainEqual(store);
+});
+
+test("delete franchise", async () => {
+  const adminUser = await createUser(Role.Admin);
+  const loginRes = await request(app).put("/api/auth").send(adminUser);
+  const token = loginRes.body.token;
+
+  const testFranchise = getTestFranchise(adminUser);
+  const franchiseRes = await createTestFranchise(testFranchise, token);
+  expect(franchiseRes.status).toEqual(200);
+  expect(franchiseRes.body).toMatchObject(testFranchise);
+
+  const currentFranchise = await getCurrentFranchise(franchiseRes.body.id);
+  expect(currentFranchise).toBeDefined();
+
+  const deleteRes = await request(app)
+    .delete(`/api/franchise/${franchiseRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  expect(deleteRes.status).toEqual(200);
+
+  const deletedFranchise = await getCurrentFranchise(franchiseRes.body.id);
+  expect(deletedFranchise).not.toBeDefined();
 });
