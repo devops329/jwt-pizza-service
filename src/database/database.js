@@ -239,7 +239,17 @@ class DB {
   async getFranchise(franchise) {
     const connection = await this.getConnection();
     try {
-      franchise.admins = await this.query(connection, `SELECT u.id, u.name, u.email FROM userRole AS ur JOIN user AS u ON u.id=ur.userId WHERE ur.objectId=? AND ur.role='franchisee'`, [franchise.id]);
+      const franchiseObject = await this.query(connection, `SELECT * FROM franchise WHERE id=?`, [franchise.id]);
+
+      if (!franchiseObject.length) {
+        return undefined;
+      }
+
+        franchise.admins = await this.query(
+          connection,
+          `SELECT u.id, u.name, u.email FROM userRole AS ur JOIN user AS u ON u.id=ur.userId WHERE ur.objectId=? AND ur.role='franchisee'`,
+          [franchise.id]
+        );
 
       franchise.stores = await this.query(
         connection,

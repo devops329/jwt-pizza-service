@@ -30,6 +30,32 @@ async function createTestFranchise(franchise, token) {
     .send(franchise);
 }
 
+async function createFranchiseAndStore() {
+  const adminUser = await createUser(Role.Admin);
+  const adminLoginRes = await request(app).put("/api/auth").send(adminUser);
+
+  const testFranchise = getTestFranchise(adminUser);
+  const res = await createTestFranchise(
+    testFranchise,
+    adminLoginRes.body.token
+  );
+  const franchiseId = res.body.id;
+
+  const franchiseeUser = await createUser(Role.Franchisee, testFranchise.name);
+  const loginRes = await request(app).put("/api/auth").send(franchiseeUser);
+  const token = loginRes.body.token;
+
+  const store = { name: getRandomString() };
+  const storeRes = await request(app)
+    .post(`/api/franchise/${franchiseId}/store`)
+    .set("Authorization", `Bearer ${token}`)
+    .send(store);
+  expect(storeRes.status).toEqual(200);
+  expect(storeRes.body).toMatchObject(store);
+
+  return { loginRes, token, store, franchiseId, storeRes };
+}
+
 beforeAll(async () => {
   const { user, token } = await registerUser();
   testUser = user;
@@ -76,27 +102,7 @@ test("can't create franchise with invalid user", async () => {
 });
 
 test("create store", async () => {
-  const adminUser = await createUser(Role.Admin);
-  const adminLoginRes = await request(app).put("/api/auth").send(adminUser);
-
-  const testFranchise = getTestFranchise(adminUser);
-  const res = await createTestFranchise(
-    testFranchise,
-    adminLoginRes.body.token
-  );
-  const franchiseId = res.body.id;
-
-  const franchiseeUser = await createUser(Role.Franchisee, testFranchise.name);
-  const loginRes = await request(app).put("/api/auth").send(franchiseeUser);
-  const token = loginRes.body.token;
-
-  const store = { name: getRandomString() };
-  const storeRes = await request(app)
-    .post(`/api/franchise/${franchiseId}/store`)
-    .set("Authorization", `Bearer ${token}`)
-    .send(store);
-  expect(storeRes.status).toEqual(200);
-  expect(storeRes.body).toMatchObject(store);
+  const { loginRes, token, store } = await createFranchiseAndStore();
 
   const franchiseRes = await request(app)
     .get(`/api/franchise/${loginRes.body.user.id}`)
@@ -105,4 +111,32 @@ test("create store", async () => {
 
   const { id, ...otherInfo } = franchiseRes.body[0].stores[0];
   expect(otherInfo).toEqual({ ...store, totalRevenue: 0 });
+});
+
+test("try to create store on an invalid franchise", async () => {
+  const adminUser = await createUser(Role.Admin);
+  const loginRes = await request(app).put("/api/auth").send(adminUser);
+
+  const storeRes = await request(app)
+    .post(`/api/franchise/-1/store`)
+    .set("Authorization", `Bearer ${loginRes.body.token}`);
+  expect(storeRes.status).toEqual(403);
+});
+
+test("delete store", async () => {
+  const { token, store, franchiseId, storeRes } =
+    await createFranchiseAndStore();
+
+  const deleteRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}/store/${storeRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  expect(deleteRes.status).toEqual(200);
+
+  const franchiseRes = await request(app).get(`/api/franchise`).send();
+  expect(franchiseRes.status).toEqual(200);
+  const currentFranchise = franchiseRes.body.find(
+    (franchise) => franchise.id === franchiseId
+  );
+  expect(currentFranchise).toBeDefined();
+  expect(currentFranchise.stores).not.toContainEqual(store);
 });
