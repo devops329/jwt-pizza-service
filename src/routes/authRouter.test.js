@@ -23,6 +23,13 @@ test("root message", async () => {
   expect(json.message).toEqual("welcome to JWT Pizza");
 });
 
+test("invalid route", async () => {
+  const res = await request(app).get("/not/a/real/path").send();
+  expect(res.status).toBe(404);
+  const json = JSON.parse(res.text);
+  expect(json.message).toEqual("unknown endpoint");
+});
+
 test("docs", async () => {
   const res = await request(app).get("/api/docs").send();
   expect(res.status).toBe(200);

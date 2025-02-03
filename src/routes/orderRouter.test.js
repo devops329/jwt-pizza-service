@@ -71,6 +71,7 @@ test("create order", async () => {
     .put("/api/order/menu")
     .set("Authorization", `Bearer ${adminToken}`)
     .send(testMenuItem);
+  expect(addRes.status).toEqual(200);
   const item = addRes.body.find((item) => item.title === testMenuItem.title);
   expect(item).toBeDefined();
 

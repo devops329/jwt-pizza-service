@@ -23,12 +23,6 @@ async function registerUser() {
   return { user, token: registerRes.body.token };
 }
 
-async function registerAndLogin() {
-  const { user, token } = registerUser();
-  const loginRes = await request(app).put("/api/auth").send(user);
-  return { user, token };
-}
-
 async function createUser(role, franchise) {
   const password = getRandomString();
   let user = {
@@ -85,7 +79,6 @@ module.exports = {
   getRandomString,
   getRandomEmail,
   registerUser,
-  registerAndLogin,
   createUser,
   getTestFranchise,
   createTestFranchise,
