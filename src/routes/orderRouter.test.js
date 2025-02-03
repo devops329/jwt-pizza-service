@@ -1,11 +1,8 @@
 const request = require("supertest");
 const app = require("../service");
-const { DB } = require("../database/database");
 const {
   tokenRegex,
-  getRandomEmail,
   getRandomString,
-  registerAndLogin,
   registerUser,
   createUser,
   createFranchiseAndStore,
@@ -103,7 +100,7 @@ test("create order", async () => {
 });
 
 test("can't order something that doesn't exist", async () => {
-  const { franchiseId, storeRes, adminToken } = await createFranchiseAndStore();
+  const { franchiseId, storeRes } = await createFranchiseAndStore();
   await request(app).put("/api/auth").send(testUser);
 
   const testOrder = {

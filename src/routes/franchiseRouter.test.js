@@ -1,10 +1,6 @@
 const request = require("supertest");
 const app = require("../service");
-const { DB } = require("../database/database");
 const {
-  getRandomEmail,
-  getRandomString,
-  registerAndLogin,
   registerUser,
   createUser,
   getTestFranchise,
@@ -33,7 +29,7 @@ beforeAll(async () => {
 
 test("get franchises", async () => {
   const adminUser = await createUser(Role.Admin);
-  const loginRes = await request(app).put("/api/auth").send(adminUser);
+  await request(app).put("/api/auth").send(adminUser);
 
   const res = await request(app).get("/api/franchise");
   expect(res.status).toEqual(200);
