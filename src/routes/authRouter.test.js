@@ -2,14 +2,13 @@ const request = require("supertest");
 const app = require("../service");
 const { DB } = require("../database/database");
 const {
+  tokenRegex,
   registerUser,
   getRandomEmail,
   getRandomString,
 } = require("../jest/jestHelpers");
 
 let testUser, testUserAuthToken;
-
-const tokenRegex = /^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/;
 
 beforeEach(async () => {
   const { user, token } = await registerUser();

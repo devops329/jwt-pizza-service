@@ -7,6 +7,9 @@ const {
   registerAndLogin,
   registerUser,
   createUser,
+  getTestFranchise,
+  createTestFranchise,
+  createFranchiseAndStore,
 } = require("../jest/jestHelpers");
 const { Role } = require("../model/model");
 
@@ -15,46 +18,6 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 }
 
 let testUser, testUserAuthToken;
-
-function getTestFranchise(adminUser) {
-  return {
-    name: getRandomString(),
-    admins: [{ email: adminUser.email }],
-  };
-}
-
-async function createTestFranchise(franchise, token) {
-  return await request(app)
-    .post("/api/franchise")
-    .set("Authorization", `Bearer ${token}`)
-    .send(franchise);
-}
-
-async function createFranchiseAndStore() {
-  const adminUser = await createUser(Role.Admin);
-  const adminLoginRes = await request(app).put("/api/auth").send(adminUser);
-
-  const testFranchise = getTestFranchise(adminUser);
-  const res = await createTestFranchise(
-    testFranchise,
-    adminLoginRes.body.token
-  );
-  const franchiseId = res.body.id;
-
-  const franchiseeUser = await createUser(Role.Franchisee, testFranchise.name);
-  const loginRes = await request(app).put("/api/auth").send(franchiseeUser);
-  const token = loginRes.body.token;
-
-  const store = { name: getRandomString() };
-  const storeRes = await request(app)
-    .post(`/api/franchise/${franchiseId}/store`)
-    .set("Authorization", `Bearer ${token}`)
-    .send(store);
-  expect(storeRes.status).toEqual(200);
-  expect(storeRes.body).toMatchObject(store);
-
-  return { loginRes, token, store, franchiseId, storeRes };
-}
 
 async function getCurrentFranchise(franchiseId) {
   const res = await request(app).get(`/api/franchise`);
