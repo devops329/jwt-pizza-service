@@ -18,13 +18,11 @@ if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 
 let testUser, testUserAuthToken, testMenuItem;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const { user, token } = await registerUser();
   testUser = user;
   testUserAuthToken = token;
-});
 
-beforeEach(() => {
   testMenuItem = {
     title: getRandomString(),
     description: getRandomString(),
@@ -79,7 +77,11 @@ test("create order", async () => {
   const testOrder = {
     franchiseId,
     storeId: storeRes.body.id,
-    items: [{ menuId: item.id, description: item.title, price: item.price }],
+    items: Array.from({ length: 3 }, () => ({
+      menuId: item.id,
+      description: item.title,
+      price: item.price,
+    })),
   };
   const orderRes = await request(app)
     .post("/api/order")
@@ -93,8 +95,34 @@ test("create order", async () => {
     .get("/api/order")
     .set("Authorization", `Bearer ${testUserAuthToken}`)
     .send(testUser);
-  expect(orderRes.status).toEqual(200);
+  expect(getRes.status).toEqual(200);
 
   expect(getRes.body.orders.length).toEqual(1);
   expect(getRes.body.orders[0]).toMatchObject(testOrder);
+});
+
+test("can't order something that doesn't exist", async () => {
+  const { franchiseId, storeRes, adminToken } = await createFranchiseAndStore();
+  await request(app).put("/api/auth").send(testUser);
+
+  const testOrder = {
+    franchiseId,
+    storeId: storeRes.body.id,
+    items: [
+      { menuId: "not-a-real-id", description: "description", price: "0.05" },
+    ],
+  };
+  const orderRes = await request(app)
+    .post("/api/order")
+    .set("Authorization", `Bearer ${testUserAuthToken}`)
+    .send(testOrder);
+  expect(orderRes.status).toEqual(500);
+
+  const getRes = await request(app)
+    .get("/api/order")
+    .set("Authorization", `Bearer ${testUserAuthToken}`)
+    .send(testUser);
+  expect(getRes.status).toEqual(200);
+  expect(getRes.body.orders.length).toEqual(1);
+  expect(getRes.body.orders[0].items.length).toEqual(0);
 });
