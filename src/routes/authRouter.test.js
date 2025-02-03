@@ -16,6 +16,13 @@ beforeEach(async () => {
   testUserAuthToken = token;
 });
 
+test("root message", async () => {
+  const res = await request(app).get("/").send();
+  expect(res.status).toBe(200);
+  const json = JSON.parse(res.text);
+  expect(json.message).toEqual("welcome to JWT Pizza");
+});
+
 test("docs", async () => {
   const res = await request(app).get("/api/docs").send();
   expect(res.status).toBe(200);
