@@ -9,7 +9,6 @@ describe("GET", () => {
   let tempFranchise;
   let tempStore;
   let tempOrder;
-  let tempOrderItem;
   let token;
   beforeAll(async () => {
     tempUser = await TH.createTempUser([Role.Diner]);
@@ -17,7 +16,7 @@ describe("GET", () => {
     tempFranchise = await TH.createTempFranchise();
     tempStore = await TH.createTempStore(tempFranchise.id);
     tempOrder = await TH.createTempOrder(tempUser.id, tempFranchise.id, tempStore.id);
-    tempOrderItem = await TH.addTempOrderItem(tempOrder.id, tempMenuItem.id);
+    await TH.addTempOrderItem(tempOrder.id, tempMenuItem.id);
     const response = await request(app).put('/api/auth/').send(tempUser);
     token = response.body.token;
   })
