@@ -3,7 +3,6 @@ const { Role } = require('../model/model');
 const jwt = require('jsonwebtoken');
 const TH = require('../testHelpers.js');
 
-
 describe("Get Menu Tests", () => {
   let tempMenuItem;
   beforeAll(async () => {

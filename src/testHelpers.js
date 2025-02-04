@@ -79,7 +79,7 @@ async function createTempUser(roles, franchiseId) {
 
 async function deleteTempUser(name) {
   const connection = await DB.getConnection();
-  await DB.query(connection, 'DELETE FROM userRole where userId = (SELECT id FROM user WHERE name = ?)', [name]);
+  await DB.query(connection, 'DELETE FROM userRole where userId IN (SELECT id FROM user WHERE name = ?)', [name]);
   await DB.query(connection, 'DELETE FROM user WHERE name = ?', [name]);
   connection.end();
 }
