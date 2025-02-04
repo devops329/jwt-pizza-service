@@ -25,11 +25,22 @@ test('login', async () => {
 
 //test update user
 test("update user", async ()=>{
+    let newEmail = 'new@email.com'
+    let password = 'newpass'
     //put request with path /api/auth/:userId
-    const updateRes = (await request(app).put(`/api/auth/${testUserID}`).send(testUserAuthToken));
+    const updateRes = (await request(app)
+    .put(`/api/auth/${testUserID}`)
+    .set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send({ email: newEmail, password: password })
+  );
     expect (updateRes.status).toBe(200);
-    expect(updateRes.body.user).toMatchObject(expectedUser);
-})
+    expect(updateRes.body.email).toMatch(newEmail);
+    
+    //test below logs in to verify password
+    const loginRes = await request(app).put('/api/auth').send({name: 'pizza diner', email: newEmail, password: password});
+    expect(loginRes.status).toBe(200);
+    expectValidJwt(loginRes.body.token);
+  })
 
 
 //test logout
