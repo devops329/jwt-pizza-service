@@ -116,7 +116,6 @@ franchiseRouter.post(
     if (!franchise || (!req.user.isRole(Role.Admin) && !franchise.admins.some((admin) => admin.id === req.user.id))) {
       throw new StatusCodeError('unable to create a store', 403);
     }
-
     res.send(await DB.createStore(franchise.id, req.body));
   })
 );

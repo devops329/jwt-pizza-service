@@ -1,6 +1,5 @@
 const { DB } = require('./database');
 const { Role } = require('../model/model');
-const jwt = require('jsonwebtoken');
 const TH = require('../testHelpers.js');
 
 describe("Get Menu Tests", () => {
@@ -132,13 +131,10 @@ describe("Update users", () => {
 describe("Login Users", () => {
   let tempUser;
   let token;
-  let tokenSignature;
   beforeAll(async () => {
-    const importedConfig = require('../config.js');
-    const jwtSecret = importedConfig.jwtSecret;
     tempUser = await TH.createTempUser([Role.Diner]);
-    token = jwt.sign(tempUser, jwtSecret);
-    tokenSignature = DB.getTokenSignature(token);
+    const tokenInfo = await TH.getAuthToken(tempUser);
+    token = tokenInfo.token;
   });
   afterAll(async () => {
     const connection = await DB.getConnection();
@@ -157,11 +153,10 @@ describe("Is Logged In Tests", () => {
   let token;
   let tokenSignature;
   beforeAll(async () => {
-    const importedConfig = require('../config.js');
-    const jwtSecret = importedConfig.jwtSecret;
     tempUser = await TH.createTempUser([Role.Diner]);
-    token = jwt.sign(tempUser, jwtSecret);
-    tokenSignature = DB.getTokenSignature(token);
+    const tokenInfo = TH.getAuthToken(tempUser);
+    token = tokenInfo.token;
+    tokenSignature = tokenInfo.tokenSignature;
     const connection = await DB.getConnection();
     await DB.query(connection, `INSERT INTO auth (token, userId) VALUES (?, ?)`, [tokenSignature, tempUser.id]);
     connection.end();
@@ -183,11 +178,10 @@ describe("Logout Users", () => {
   let token;
   let tokenSignature;
   beforeAll(async () => {
-    const importedConfig = require('../config.js');
-    const jwtSecret = importedConfig.jwtSecret;
     tempUser = await TH.createTempUser([Role.Diner]);
-    token = jwt.sign(tempUser, jwtSecret);
-    tokenSignature = DB.getTokenSignature(token);
+    const tokenInfo = TH.getAuthToken(tempUser);
+    token = tokenInfo.token;
+    tokenSignature = tokenInfo.tokenSignature;
     const connection = await DB.getConnection();
     await DB.query(connection, `INSERT INTO auth (token, userId) VALUES (?, ?)`, [tokenSignature, tempUser.id]);
     connection.end();

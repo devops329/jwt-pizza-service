@@ -1,6 +1,7 @@
 const { DB } = require('./database/database');
 const { Role } = require('./model/model');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 function randomId() {
   return Math.floor(Math.random() * 1000000);
@@ -79,6 +80,7 @@ async function createTempUser(roles, franchiseId) {
 
 async function deleteTempUser(name) {
   const connection = await DB.getConnection();
+  await DB.query(connection, 'DELETE FROM auth WHERE userId IN (SELECT id FROM user WHERE name = ?)', [name]);
   await DB.query(connection, 'DELETE FROM userRole where userId IN (SELECT id FROM user WHERE name = ?)', [name]);
   await DB.query(connection, 'DELETE FROM user WHERE name = ?', [name]);
   connection.end();
@@ -169,6 +171,19 @@ async function addTempOrderItem(orderId, menuItemId) {
   return tempItem;
 }
 
+/**
+ * 
+ * @param {object} user 
+ * @return {{token: string, tokenSignature: string}}
+ */
+function getAuthToken(user) {
+  const importedConfig = require('./config.js');
+  const jwtSecret = importedConfig.jwtSecret;
+  const token = jwt.sign(user, jwtSecret);
+  const tokenSignature = DB.getTokenSignature(token);
+  return {token, tokenSignature};
+}
+
 module.exports = {
   isAMenuItem,
   isAUser,
@@ -186,4 +201,5 @@ module.exports = {
   deleteTempOrder,
   addTempOrderItem,
   randomId,
+  getAuthToken
 }
