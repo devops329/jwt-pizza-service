@@ -68,12 +68,10 @@ describe("Add New Users", () => {
     newFranchisee.roles[0].object = tempFranchise.name;
   })
   afterAll(async () => {
-    const connection = await DB.getConnection();
     await TH.deleteTempUser(newDiner.name);
     await TH.deleteTempUser(newAdmin.name);
     await TH.deleteTempUser(newFranchisee.name);
     await TH.deleteTempFranchise(tempFranchise.name);
-    connection.end();
   });
   test("Add New Diner", async () => {
     const result = await DB.addUser(newDiner);
@@ -496,5 +494,24 @@ describe("Delete Store Tests", () => {
   test("Delete Store", async () => {
     const result = await DB.deleteStore(tempFranchise.id, tempStore.id);
     expect(result).toBe(undefined);
+  })
+})
+
+describe("Various database tests", () => {
+  test("getTokenSignature", () => {
+    const response = DB.getTokenSignature("testtoken");
+    expect(response).toBe('');
+  })
+  test("getID", async () => {
+    const connection = await DB.getConnection();
+    try {
+      const errorMessage = '';
+      await DB.getID(connection, 'name', `blahBleeBloo${TH.randomId()}`, 'user');
+      expect(errorMessage.includes("No ID found")).toBe(true);
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error);
+      expect(e.message).toBe("No ID found");
+    }
+    connection.end();
   })
 })

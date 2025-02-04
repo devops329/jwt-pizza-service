@@ -91,6 +91,7 @@ async function createTempFranchise() {
   const connection = await DB.getConnection();
   const response = await DB.query(connection, 'INSERT INTO franchise (name) VALUES (?)', [tempFranchise.name]);
   tempFranchise.id = response.insertId;
+  connection.end();
   return tempFranchise;
 }
 
@@ -108,6 +109,7 @@ async function createTempStore(franchiseId) {
   const connection = await DB.getConnection();
   const response = await DB.query(connection, 'INSERT INTO store (name, franchiseId) VALUES (?, ?)', [tempStore.name, tempStore.franchiseId]);
   tempStore.id = response.insertId;
+  connection.end();
   return tempStore;
 }
 
