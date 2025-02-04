@@ -3,11 +3,13 @@ const app = require('../../src/service');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
+let testUserID;
 //test register
 beforeAll(async () => {
   testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
   const registerRes = await request(app).post('/api/auth').send(testUser);
   testUserAuthToken = registerRes.body.token;
+  testUserID = registerRes.body.user.id;
   expectValidJwt(testUserAuthToken);
 });
 //test login
@@ -22,12 +24,16 @@ test('login', async () => {
 });
 
 //test update user
-//test("update user", async ()=>{
+test("update user", async ()=>{
     //put request with path /api/auth/:userId
-//})
-//test logout
+    const updateRes = (await request(app).put(`/api/auth/${testUserID}`).send(testUserAuthToken));
+    expect (updateRes.status).toBe(200);
+    expect(updateRes.body.user).toMatchObject(expectedUser);
+})
 
-test('login - logout', async () =>{
+
+//test logout
+test('logout', async () =>{
     //const loginRes = await request(app).put('/api/auth').send(testUser);
     const logoutRes = (await request(app).delete('/api/auth').set('Authorization', `Bearer ${testUserAuthToken}`));
     expect(logoutRes.status).toBe(200);
