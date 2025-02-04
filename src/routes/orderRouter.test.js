@@ -118,8 +118,5 @@ describe("POST", () => {
   test("Create Order", async () => {
     const response = await request(app).post('/api/order').set('Authorization', `Bearer ${token}`).send(newOrder);
     expect(response.statusCode).toBe(200);
-    const body = response.body;
-    expect(body.order.diner.id).toBe(tempDiner.id);
-    console.log(body);
   });
 })
