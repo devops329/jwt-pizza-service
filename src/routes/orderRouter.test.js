@@ -120,5 +120,6 @@ describe("POST", () => {
     expect(response.statusCode).toBe(200);
     const body = response.body;
     expect(body.order.diner.id).toBe(tempDiner.id);
+    console.log(body);
   });
 })
