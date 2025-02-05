@@ -28,6 +28,7 @@ let adminUser;
 let testUserAuthToken;
 let franchise;
 let userId;
+let franchiseId;
 describe("franchise tests", ()=>{
     beforeAll(async () => {
         let userName = randomName();
@@ -50,7 +51,8 @@ describe("franchise tests", ()=>{
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send(franchise)
         expect(createRes.status).toBe(200);
-        userId = createRes.id
+        userId = createRes.body.admins.id
+        franchiseId = createRes.id
       });
     
     //test list all franchises
@@ -67,12 +69,42 @@ describe("franchise tests", ()=>{
         expect(listRes.status).toBe(200);
     })
     
-    //create a new franchise
-    
     //delete a franchise
+    test('delete franchise', async ()=>{
+        const deleteRes = await request(app)
+        .delete(`/api/franchise/:${franchiseId}`)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        expect(deleteRes.status).toBe(200);
+        expect(deleteRes.body.message).toEqual("franchise deleted")
+    })
     
     //create a new franchise store
+    test('create store', async()=>{
+        let storeName = randomName()
+        const createRes = await request(app)
+        .post(`/api/franchise/:${franchiseId}/store`)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .send({"franchiseId": franchiseId, "name":storeName})
+        expect(createRes.status).toBe(200);
+        expect(createRes.body.name).toEqual(storeName)
+    })
     
     //delete a store
-    
+    test('delete store', async()=>{
+        //create a store so I can remove it
+        let storeName = randomName()
+        const createRes = await request(app)
+        .post(`/api/franchise/:${franchiseId}/store`)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .send({"franchiseId": franchiseId, "name":storeName})
+        expect(createRes.status).toBe(200);
+        let storeId = createRes.body.id;
+
+        //delete that store
+        const deleteRes = await request(app)
+        .delete(`/api/franchise/:${franchiseId}/store/:${storeId}`)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        expect(deleteRes.status).toBe(200);
+        expect(deleteRes.body.message).toEqual("store deleted")
+    })
 })
