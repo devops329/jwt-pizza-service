@@ -35,7 +35,7 @@ describe("franchise tests", ()=>{
         let email = userName + '@admin.com';
         let password = 'toomanysecrets'
         //create admin user
-        let admin = await createAdminUser(userName, email, password);
+        await createAdminUser(userName, email, password);
         adminUser = {name : userName, email : email, password : password}
         //login and grab the auth token
         const loginRequest = await request(app).put('/api/auth').send(adminUser);
