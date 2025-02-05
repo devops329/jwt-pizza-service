@@ -25,12 +25,12 @@ async function createAdminUser(userName, email, password) {
 }
 
 let adminUser;
-let testUserAuthToken;
+let adminUserAuthToken;
 let franchise;
 let userId;
 let franchiseId;
 describe("franchise tests", ()=>{
-    beforeAll(async () => {
+    beforeEach(async () => {
         let userName = randomName();
         let email = userName + '@admin.com';
         let password = 'toomanysecrets'
@@ -39,7 +39,7 @@ describe("franchise tests", ()=>{
         adminUser = {name : userName, email : email, password : password}
         //login and grab the auth token
         const loginRequest = await request(app).put('/api/auth').send(adminUser);
-        testUserAuthToken = loginRequest.body.token;
+        adminUserAuthToken = loginRequest.body.token;
         expect (loginRequest.status).toBe(200);
         expectValidJwt(loginRequest.body.token);
         
@@ -48,11 +48,12 @@ describe("franchise tests", ()=>{
         franchise = {"name" : franchiseName, "admins" : [{"email" : email}]}
         const createRes = await request(app)
         .post('/api/franchise')
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .set('Authorization', `Bearer ${adminUserAuthToken}`)
         .send(franchise)
         expect(createRes.status).toBe(200);
         userId = createRes.body.admins.id
-        franchiseId = createRes.id
+        franchiseId = createRes.body.id
+        //console.log("BEFORE ALL TEST FRANCHISE ID: ", franchiseId)
       });
     
     //test list all franchises
@@ -65,37 +66,31 @@ describe("franchise tests", ()=>{
     test('list user franchises', async ()=>{
         const listRes = await request(app)
         .get(`/api/franchise/:${userId}`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .set('Authorization', `Bearer ${adminUserAuthToken}`)
         expect(listRes.status).toBe(200);
-    })
-    
-    //delete a franchise
-    test('delete franchise', async ()=>{
-        const deleteRes = await request(app)
-        .delete(`/api/franchise/:${franchiseId}`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
-        expect(deleteRes.status).toBe(200);
-        expect(deleteRes.body.message).toEqual("franchise deleted")
-    })
+    })  
     
     //create a new franchise store
     test('create store', async()=>{
+        //console.log("IN TEST FRANCHISE ID: ", franchiseId)
         let storeName = randomName()
         const createRes = await request(app)
-        .post(`/api/franchise/:${franchiseId}/store`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .post(`/api/franchise/${franchiseId}/store`)
+        .set('Authorization', `Bearer ${adminUserAuthToken}`)
         .send({"franchiseId": franchiseId, "name":storeName})
+        //console.log(createRes.body)
         expect(createRes.status).toBe(200);
         expect(createRes.body.name).toEqual(storeName)
     })
+    
     
     //delete a store
     test('delete store', async()=>{
         //create a store so I can remove it
         let storeName = randomName()
         const createRes = await request(app)
-        .post(`/api/franchise/:${franchiseId}/store`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .post(`/api/franchise/${franchiseId}/store`)
+        .set('Authorization', `Bearer ${adminUserAuthToken}`)
         .send({"franchiseId": franchiseId, "name":storeName})
         expect(createRes.status).toBe(200);
         let storeId = createRes.body.id;
@@ -103,8 +98,17 @@ describe("franchise tests", ()=>{
         //delete that store
         const deleteRes = await request(app)
         .delete(`/api/franchise/:${franchiseId}/store/:${storeId}`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .set('Authorization', `Bearer ${adminUserAuthToken}`)
         expect(deleteRes.status).toBe(200);
         expect(deleteRes.body.message).toEqual("store deleted")
     })
+    
+    //delete a franchise
+    afterEach(async ()=>{
+      const deleteRes = await request(app)
+      .delete(`/api/franchise/${franchiseId}`)
+      .set('Authorization', `Bearer ${adminUserAuthToken}`)
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.message).toEqual("franchise deleted")
+  })
 })
