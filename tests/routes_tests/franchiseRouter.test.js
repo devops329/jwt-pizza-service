@@ -27,6 +27,7 @@ async function createAdminUser(userName, email, password) {
 let adminUser;
 let testUserAuthToken;
 let franchise;
+let userId;
 describe("franchise tests", ()=>{
     beforeAll(async () => {
         let userName = randomName();
@@ -42,12 +43,14 @@ describe("franchise tests", ()=>{
         expectValidJwt(loginRequest.body.token);
         
         //create a franchise
-        franchise = {"name" : "testFranchise", "admins" : [{"email" : email}]}
+        let franchiseName = userName + "TestFranchise"
+        franchise = {"name" : franchiseName, "admins" : [{"email" : email}]}
         const createRes = await request(app)
         .post('/api/franchise')
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send(franchise)
         expect(createRes.status).toBe(200);
+        userId = createRes.id
       });
     
     //test list all franchises
@@ -58,8 +61,9 @@ describe("franchise tests", ()=>{
     
     //list a users franchises
     test('list user franchises', async ()=>{
-        let id = createRes.id
-        const listRes = await request(app).get(`/api/franchise/:${id}`)
+        const listRes = await request(app)
+        .get(`/api/franchise/:${userId}`)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
         expect(listRes.status).toBe(200);
     })
     
