@@ -57,6 +57,11 @@ describe("franchise tests", ()=>{
       });
     
     //list a users franchises
+    test('list user franchises', async ()=>{
+        let id = createRes.id
+        const listRes = await request(app).get(`/api/franchise/:${id}`)
+        expect(listRes.status).toBe(200);
+    })
     
     //create a new franchise
     
