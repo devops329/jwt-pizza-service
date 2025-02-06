@@ -19,7 +19,7 @@ async function createAdminUser(userName, email, password) {
   return { ...user, password: password };
 }
 
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
+//const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let adminUser;
 let adminUserAuthToken;
 describe("order tests", ()=>{
