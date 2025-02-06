@@ -72,4 +72,4 @@ jobs:
         run: |
           coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json)
           color=$(echo "$coverage < 80" | bc | awk '{if ($1) print "red"; else print "green"}')
-          curl https://img.shields.io/badge/Coverage-$coverage_pct%25-$color -o coverageBadge.svg 
+          curl -s -X POST "https://badge.cs329.click/badge/${{ github.repository_owner }}/jwtpizzaservicecoverage?label=Coverage&value=$coverage%25&color=$color" -H "authorization: bearer ${{ secrets.FACTORY_API_KEY }}" -o /dev/null
