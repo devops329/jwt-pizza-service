@@ -132,3 +132,23 @@ jobs:
     - name: Deploy new container
       run: |
         aws ecs update-service --cluster jwt-pizza-service --service jwt-pizza-service --force-new-deployment
+
+  release:
+  needs:
+    - build
+    - deploy
+  runs-on: ubuntu-latest
+  steps:
+    - name: Create Release
+      uses: ncipollo/release-action@2c591bcc8ecdcd2db72b97d6147f871fcd833ba5
+      env:
+        version: ${{needs.build.outputs.version}}
+      with:
+        tag: version-${{ env.version }}
+        name: Version ${{ env.version }}
+        body: |
+          ## 🚀 Changes
+
+          ${{ github.event.head_commit.message }}
+
+          **commit**: ${{ github.sha }}
