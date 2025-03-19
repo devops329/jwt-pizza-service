@@ -170,8 +170,8 @@ module.exports = {
     incrementSuccessfulAuthAttempts, 
     incrementFailedAuthAttempts, 
 
-    //getCpuUsagePercentage,
-    //getMemoryUsagePercentage,
+    getCpuUsagePercentage,
+    getMemoryUsagePercentage,
 
     incrementPizzasMade,
     incrementFailedPizzas,
