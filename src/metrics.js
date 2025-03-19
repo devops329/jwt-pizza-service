@@ -83,25 +83,32 @@ function addPizzaLatency(latency){
 function sendMetricsPeriodically(period) { //period is oftenness to send, place this code anywhere. grafana can deal with the sum
     setInterval(() => {
       try {
-        const buf = Buffer.from([
-            `requests_GET ${requestsByMethod.GET}`,
-            `requests_POST ${requestsByMethod.POST}`,
-            `requests_DELETE ${requestsByMethod.DELETE}`,
-            `requests_PUT ${requestsByMethod.PUT}`,
-            `active_users ${activeUsers}`,
-            `auth_success ${successfulAuthAttempts}`,
-            `auth_failed ${failedAuthAttempts}`,
-            `cpu_usage ${getCpuUsagePercentage()}`,
-            `memory_usage ${getMemoryUsagePercentage()}`,
-            `pizzas_sold ${pizzasMade}`,
-            `revenue ${totalPrice}`,
-            `pizza_fails ${pizzaCreationFails}`,
-            `general_latency ${generalLatency}`,
-            `pizza_latency ${pizzaLatency}`
-        ].join('\n'));
-  
-        const metrics = buf.toString('\n');
-        sendMetricToGrafana(metrics);
+        // Send HTTP request metrics (GET, POST, DELETE, PUT)
+        sendMetricToGrafana("requests_GET", requestsByMethod.GET, "sum", '1');
+        sendMetricToGrafana("requests_POST", requestsByMethod.POST, "sum", '1');
+        sendMetricToGrafana("requests_DELETE", requestsByMethod.DELETE, "sum", '1');
+        sendMetricToGrafana("requests_PUT", requestsByMethod.PUT, "sum", '1');
+        
+        // Send active users
+        sendMetricToGrafana("active_users", activeUsers, "sum", '1');
+
+        // Send authentication attempts (success and failure)
+        sendMetricToGrafana("auth_success", successfulAuthAttempts, "sum", '1');
+        sendMetricToGrafana("auth_failed", failedAuthAttempts, "sum", '1');
+        
+        // Send system CPU and memory usage metrics
+        sendMetricToGrafana("cpu_usage", getCpuUsagePercentage(), "gauge", '%');
+        sendMetricToGrafana("memory_usage", getMemoryUsagePercentage(), "gauge", '%');
+
+        // Send pizza data (sold, fails, revenue)
+        sendMetricToGrafana("pizzas_sold", pizzasMade, "sum", '1');
+        sendMetricToGrafana("revenue", totalPrice, "sum", '$');
+        sendMetricToGrafana("pizza_fails", pizzaCreationFails, "sum", '1');
+        
+        // Send latency metrics
+        sendMetricToGrafana("general_latency", generalLatency, "sum", 'ms');
+        sendMetricToGrafana("pizza_latency", pizzaLatency, "sum", 'ms');
+
       } catch (error) {
         console.log('Error sending metrics', error);
       }
