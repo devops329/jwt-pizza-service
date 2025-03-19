@@ -1,4 +1,5 @@
 const { Role, DB } = require('./database/database.js');
+//const { sendMetricsPeriodically } = require('./metrics.js');
 
 if (process.argv.length < 5) {
   console.log('Usage: node init.js <name> <email> <password>');

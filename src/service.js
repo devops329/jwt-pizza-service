@@ -4,7 +4,9 @@ const orderRouter = require('./routes/orderRouter.js');
 const franchiseRouter = require('./routes/franchiseRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
-const { getRequests } = require('./metrics.js');
+const { getRequests, sendMetricsPeriodically } = require('./metrics.js');
+
+sendMetricsPeriodically(30000) //FIXME? start metric sending?
 
 const app = express();
 app.use(express.json());
