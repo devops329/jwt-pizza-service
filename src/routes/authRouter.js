@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const config = require('../config.js');
 const { asyncHandler } = require('../endpointHelper.js');
 const { DB, Role } = require('../database/database.js');
+const { incrementSuccessfulAuthAttempts, incrementFailedAuthAttempts, incrementActiveUsers } = require('../metrics.js');
+//const metrics = require("../metrics.js")
 
 const authRouter = express.Router();
 
@@ -58,12 +60,14 @@ async function setAuthUser(req, res, next) {
 // Authenticate token
 authRouter.authenticateToken = (req, res, next) => {
   if (!req.user) {
+    //FIXME insert a success/fail incrementer
     return res.status(401).send({ message: 'unauthorized' });
   }
   next();
 };
 
 // register
+/*
 authRouter.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -76,14 +80,49 @@ authRouter.post(
     res.json({ user: user, token: auth });
   })
 );
+*/
+// register
+authRouter.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    //incrementRequests("POST") //handled elsewhere with middleware
+    const start = new Date()
+    //Logger.httpLogger(req, res) //maybe taken care of elsewhere?
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      incrementFailedAuthAttempts()
+      return res.status(400).json({ message: 'name, email, and password are required' });
+    }
+    const user = await DB.addUser({ name, email, password, roles: [{ role: Role.Diner }] });
+    const auth = await setAuth(user);
+    const end = new Date()
+
+    const latency = end - start
+    addLatency(latency)
+
+    incrementSuccessfulAuthAttempts()
+    incrementActiveUsers()
+    res.json({ user: user, token: auth });
+  })
+);
 
 // login
 authRouter.put(
   '/',
   asyncHandler(async (req, res) => {
+    const start = new Date();
     const { email, password } = req.body;
     const user = await DB.getUser(email, password);
+    if (!user) {
+      incrementFailedAuthAttempts();
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
     const auth = await setAuth(user);
+    const end = new Date();
+    const latency = end - start;
+    addLatency(latency);
+    incrementSuccessfulAuthAttempts();
+    incrementActiveUsers();
     res.json({ user: user, token: auth });
   })
 );
@@ -93,7 +132,12 @@ authRouter.delete(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = new Date();
     await clearAuth(req);
+    const end = new Date();
+    const latency = end - start;
+    addLatency(latency);
+    decrementActiveUsers();
     res.json({ message: 'logout successful' });
   })
 );
@@ -103,6 +147,7 @@ authRouter.put(
   '/:userId',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = new Date();
     const { email, password } = req.body;
     const userId = Number(req.params.userId);
     const user = req.user;
@@ -111,6 +156,11 @@ authRouter.put(
     }
 
     const updatedUser = await DB.updateUser(userId, email, password);
+
+    const end = new Date();
+    const latency = end - start;
+    addLatency(latency);
+
     res.json(updatedUser);
   })
 );

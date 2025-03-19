@@ -1,8 +1,15 @@
 const config = require('./config');
 const os = require('os');
 
-const requestsByMethod = { GET: 0, POST: 0, DELETE: 0, PUT: 0 };
-const activeUsers = 0
+let requestsByMethod = { GET: 0, POST: 0, DELETE: 0, PUT: 0 };
+let activeUsers = 0
+let successfulAuthAttempts = 0
+let failedAuthAttempts = 0
+let pizzasMade = 0
+let totalPrice = 0
+let pizzaCreationFails = 0
+let generalLatency = 0
+let pizzaLatency = 0
 
 
 //required metrics: 
@@ -14,7 +21,7 @@ const activeUsers = 0
 // latency
 
 //calc requests per min //FIXME? should I be calculating per min? Or will sendMetricsPeriodically take care of that?
-function getRequests(req, res, next) {
+function getRequests(req, res, next) { //does http tracking
     let requestMethod = req.method.toUpperCase();
     if (requestMethod in requestsByMethod) {
         requestsByMethod[requestMethod] += 1;
@@ -24,29 +31,19 @@ function getRequests(req, res, next) {
 
 //calc active users
 //when someone logs in incriment logged in users, when someone logs out decrement. (log outs are delete requests to the auth api)
-function getActiveUsers(req, res, next){
-    let requestMethod = req.method.toUpperCase();
-    //req.
-    if (requestMethod == "PUT" && req.path === "/api/auth"){
-        if(res.statusCode >= 200 && res.statusCode < 300){
-            activeUsers += 1
-        }
-    }
-    else if (requestMethod == "DELETE" && req.path === "/api/auth"){
-        if (res.statusCode >= 200 && res.statusCode < 300){
-            activeUsers -= 1
-        }
-    }
-    next()
+function incrementActiveUsers(){ //go to auth router where these should be called
+    activeUsers +=1
+}
+function decrementActiveUsers(){
+    activeUsers -= 1
 }
 
-
 //calc auth attempts per min and how many succeeded and failed (login and register are only auth attempts, which are put requests to /api/auth)
-function getAuthAttempts(){
-    let requestMethod = req.method.toUpperCase();
-    let responseCode = 
-    //success (we total successes per min)
-    //failed (we total fails per min)
+function incrementSuccessfulAuthAttempts(){
+    successfulAuthAttempts += 1
+}
+function incrementFailedAuthAttempts(){
+    failedAuthAttempts += 1
 }
 
 //CPU and mem usage
@@ -63,21 +60,27 @@ function getMemoryUsagePercentage() {
 }
 
 //pizza data
-function getPurchaseMetrics(){
-    //how many pizzas made (just increment for each response) (we cal sold per min)
-    //how much it cost (sum the prices) (we calc revenue per min)
-    //was purchase successful (hmm if we got a 500 no, add that to failed orders) (we will sum creation fails)
+function incrementPizzasMade(order){
+    pizzasMade += 1
+    totalPrice += pizzaPrice
+}
+function incrementFailedPizzas(){
+    pizzaCreationFails += 1
 }
 
 //calc latency data
-function getLatencyData(){
+function addLatency(latency){ //see example and track in endpoints
+    generalLatency += latency
     //latency of Service endpoint
         //how long for response after request to the service endpoint
     //latency of Pizza creation
         //how long for response after purchase request
 }
+function addPizzaLatency(latency){
+    pizzaLatency += latency
+}
 
-function sendMetricsPeriodically(period) {
+function sendMetricsPeriodically(period) { //period is oftenness to send, place this code anywhere. grafana can deal with the sum
     const timer = setInterval(() => {
       try {
         const buf = new MetricBuilder(); //fix all this
@@ -149,4 +152,22 @@ function sendMetricToGrafana(metricName, metricValue, type, unit) {
 
 
 
-module.exports = { track }; 
+module.exports = { 
+    getRequests, 
+    incrementActiveUsers, 
+    decrementActiveUsers, 
+
+    incrementSuccessfulAuthAttempts, 
+    incrementFailedAuthAttempts, 
+
+    //getCpuUsagePercentage,
+    //getMemoryUsagePercentage,
+
+    incrementPizzasMade,
+    incrementFailedPizzas,
+
+    addLatency,
+    addPizzaLatency,
+
+    sendMetricsPeriodically
+ }; 

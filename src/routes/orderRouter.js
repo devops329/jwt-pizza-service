@@ -3,6 +3,7 @@ const config = require('../config.js');
 const { Role, DB } = require('../database/database.js');
 const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
+const { incrementPizzasMade, incrementFailedPizzas, addPizzaLatency } = require('../metrics.js');
 
 const orderRouter = express.Router();
 
@@ -44,7 +45,11 @@ orderRouter.endpoints = [
 orderRouter.get(
   '/menu',
   asyncHandler(async (req, res) => {
-    res.send(await DB.getMenu());
+    const start = Date.now();
+    const menu = await DB.getMenu();
+    const end = Date.now();
+    addLatency(end - start);
+    res.send(menu);
   })
 );
 
@@ -53,13 +58,16 @@ orderRouter.put(
   '/menu',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = Date.now();
     if (!req.user.isRole(Role.Admin)) {
       throw new StatusCodeError('unable to add menu item', 403);
     }
-
     const addMenuItemReq = req.body;
     await DB.addMenuItem(addMenuItemReq);
-    res.send(await DB.getMenu());
+    const menu = await DB.getMenu();
+    const end = Date.now();
+    addLatency(end - start);
+    res.send(menu);
   })
 );
 
@@ -68,7 +76,11 @@ orderRouter.get(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
-    res.json(await DB.getOrders(req.user, req.query.page));
+    const start = Date.now();
+    const orders = await DB.getOrders(req.user, req.query.page);
+    const end = Date.now();
+    addLatency(end - start);
+    res.json(orders);
   })
 );
 
@@ -77,17 +89,28 @@ orderRouter.post(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = Date.now();
+    
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
-    const r = await fetch(`${config.factory.url}/api/order`, {
+      const r = await fetch(`${config.factory.url}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer ${config.factory.apiKey}` },
       body: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
     });
     const j = await r.json();
+
+    const end = Date.now();
+    addLatency(end - start);
+    addPizzaLatency(end-start)
+    
     if (r.ok) {
+      totalPizzasOrdered = orderReq.items.length;//num of items in order
+      costOfOrder = orderReq.items.reduce((sum, item) => sum + item.price, 0);//sum the costs of items
+      incrementPizzasMade(totalPizzasOrdered, costOfOrder);
       res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
     } else {
+      incrementFailedPizzas()
       res.status(500).send({ message: 'Failed to fulfill order at factory', reportPizzaCreationErrorToPizzaFactoryUrl: j.reportUrl });
     }
   })
