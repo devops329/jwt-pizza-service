@@ -60,9 +60,9 @@ function getMemoryUsagePercentage() {
 }
 
 //pizza data
-function incrementPizzasMade(order){
-    pizzasMade += 1
-    totalPrice += pizzaPrice
+function incrementPizzasMade(pizzasSold, orderPrice){
+    pizzasMade += pizzasSold
+    totalPrice += orderPrice
 }
 function incrementFailedPizzas(){
     pizzaCreationFails += 1
@@ -81,7 +81,7 @@ function addPizzaLatency(latency){
 }
 
 function sendMetricsPeriodically(period) { //period is oftenness to send, place this code anywhere. grafana can deal with the sum
-    const timer = setInterval(() => {
+    setInterval(() => {
       try {
         const buf = Buffer.from([
             `requests_GET ${requestsByMethod.GET}`,

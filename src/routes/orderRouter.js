@@ -3,7 +3,7 @@ const config = require('../config.js');
 const { Role, DB } = require('../database/database.js');
 const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
-const { incrementPizzasMade, incrementFailedPizzas, addPizzaLatency } = require('../metrics.js');
+const { incrementPizzasMade, incrementFailedPizzas, addPizzaLatency, addLatency } = require('../metrics.js');
 
 const orderRouter = express.Router();
 
@@ -105,8 +105,8 @@ orderRouter.post(
     addPizzaLatency(end-start)
     
     if (r.ok) {
-      totalPizzasOrdered = orderReq.items.length;//num of items in order
-      costOfOrder = orderReq.items.reduce((sum, item) => sum + item.price, 0);//sum the costs of items
+      let totalPizzasOrdered = orderReq.items.length;//num of items in order
+      let costOfOrder = orderReq.items.reduce((sum, item) => sum + item.price, 0);//sum the costs of items
       incrementPizzasMade(totalPizzasOrdered, costOfOrder);
       res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
     } else {
