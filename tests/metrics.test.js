@@ -8,7 +8,7 @@ const {
     //incrementFailedPizzas,
     addLatency,
     addPizzaLatency,
-    sendMetricsPeriodically,
+    //sendMetricsPeriodically,
     getCpuUsagePercentage,
     getMemoryUsagePercentage,
   } = require('../src/metrics'); // Adjusted import based on your directory structure
