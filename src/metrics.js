@@ -20,7 +20,7 @@ let pizzaLatency = 0
 // pizza data (sold per min, creation fails, and revenue per min), 
 // latency
 
-//calc requests per min //FIXME? should I be calculating per min? Or will sendMetricsPeriodically take care of that?
+//calc requests per min 
 function getRequests(req, res, next) { //does http tracking
     let requestMethod = req.method.toUpperCase();
     if (requestMethod in requestsByMethod) {
