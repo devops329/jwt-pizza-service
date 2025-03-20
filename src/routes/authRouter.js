@@ -114,6 +114,7 @@ authRouter.put(
     const { email, password } = req.body;
     const user = await DB.getUser(email, password);
     if (!user) {
+      console.log("reached invalid credential state")
       incrementFailedAuthAttempts();
       return res.status(401).json({ message: 'Invalid credentials' });
     }
