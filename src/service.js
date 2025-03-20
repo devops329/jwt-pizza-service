@@ -6,7 +6,7 @@ const version = require('./version.json');
 const config = require('./config.js');
 const { getRequests, sendMetricsPeriodically } = require('./metrics.js');
 
-sendMetricsPeriodically(30000) //FIXME? start metric sending?
+sendMetricsPeriodically(10000) //FIXME? start metric sending?
 
 const app = express();
 app.use(express.json());
