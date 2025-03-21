@@ -152,8 +152,8 @@ class MetricBuilder {
     this.setMetric("totalUsers", userMetricsObj.totalUsers, "gauge", "1");
     // update active users
     const activeTimeout = 1000 * 60 * 5; // 5 minutes
-    MetricBuilder.persistentMetrics.users.activeUsers = Object.fromEntries(Object.entries(userMetricsObj.activeUsers).filter(([_, lastActiveTime]) => {
-      return Date.now() - lastActiveTime < activeTimeout;
+    MetricBuilder.persistentMetrics.users.activeUsers = Object.fromEntries(Object.entries(userMetricsObj.activeUsers).filter((keyValuePair) => {
+      return Date.now() - keyValuePair[1] < activeTimeout;
     }));
     this.setMetric("activeUsers", Object.keys(MetricBuilder.persistentMetrics.users.activeUsers).length, "gauge", "1");
   }
