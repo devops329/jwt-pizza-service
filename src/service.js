@@ -18,7 +18,9 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
 });
-metrics.sendMetricsPeriodically(1000 * 5);
+if (process.env.NODE_ENV !== 'test') {
+  metrics.sendMetricsPeriodically(1000 * 5);
+}
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
