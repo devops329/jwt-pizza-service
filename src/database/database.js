@@ -29,6 +29,16 @@ class DB {
     }
   }
 
+  async getTotalUsers() {
+    const connection = await this.getConnection();
+    try {
+      const [rows] = await connection.execute(`SELECT COUNT(*) AS totalUsers FROM user`);
+      return rows[0].totalUsers;
+    } finally {
+      connection.end();
+    }
+  }
+
   async addUser(user) {
     const connection = await this.getConnection();
     try {
@@ -152,6 +162,16 @@ class DB {
         await this.query(connection, `INSERT INTO orderItem (orderId, menuId, description, price) VALUES (?, ?, ?, ?)`, [orderId, menuId, item.description, item.price]);
       }
       return { ...order, id: orderId };
+    } finally {
+      connection.end();
+    }
+  }
+
+  async getDinerOrderStats() {
+    const connection = await this.getConnection();
+    try {
+      const [rows] = await connection.execute(`SELECT COUNT(*) AS totalOrders, SUM(oi.price) AS totalRevenue FROM dinerOrder AS do JOIN orderItem AS oi ON do.id=oi.orderId`);
+      return rows[0];
     } finally {
       connection.end();
     }

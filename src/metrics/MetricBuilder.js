@@ -1,8 +1,28 @@
 const os = require('os');
+const { DB } = require('../database/database.js');
 
 function getCpuUsagePercentage() {
+  const isWindows = os.platform() === 'win32';
+  if (isWindows) {
+    const cpus = os.cpus();
+    let idleTime = 0;
+    let totalTime = 0;
+
+    cpus.forEach((cpu) => {
+      for (const type in cpu.times) {
+      totalTime += cpu.times[type];
+      }
+      idleTime += cpu.times.idle;
+    });
+
+    const idle = idleTime / cpus.length;
+    const total = totalTime / cpus.length;
+    const usage = ((total - idle) / total) * 100;
+
+    return usage.toFixed(2);
+  }
   const cpuUsage = (os.loadavg()[0] / os.cpus().length) * 100;
-  return Math.round(cpuUsage);
+  return cpuUsage.toFixed(2);
 }
 
 function getMemoryUsagePercentage() {
@@ -10,23 +30,27 @@ function getMemoryUsagePercentage() {
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
   const memoryUsage = (usedMemory / totalMemory) * 100;
-  return Math.round(memoryUsage);
+  return memoryUsage.toFixed(2);
 }
 
 function getDiskUsagePercentage() {
   const diskUsage = (os.freemem() / os.totalmem()) * 100;
-  return Math.round(diskUsage);
+  return diskUsage.toFixed(2);
 }
 
 class MetricBuilder {
-  static persistentMetricsInitialized = false;
   static persistentMetrics = {
     http: {
       totalRequests: 0,
       successfulRequests: 0,
       failedRequests: 0,
       averageResponseTime: 0,
-      requestsPerSecond: 0,
+      pizzaCreationTime: 0,
+      requestsSinceLastUpdate: 0,
+      getRequests: 0,
+      postRequests: 0,
+      putRequests: 0,
+      deleteRequests: 0,
     },
     users: {
       totalUsers: 0,
@@ -62,18 +86,27 @@ class MetricBuilder {
     ]
   }; // open telemetry standard
 
-  async initializePersistentMetrics() {
+  static async initializePersistentMetrics() {
     // initialize totalUsers
+    const totalUsers = await DB.getTotalUsers();
+    MetricBuilder.persistentMetrics.users.totalUsers = totalUsers;
+    // initialize totalProfits and totalPurchases
+    const orderStats = await DB.getDinerOrderStats();
+    MetricBuilder.persistentMetrics.purchases.totalProfits = orderStats.totalRevenue;
+    MetricBuilder.persistentMetrics.purchases.totalPurchases = orderStats.totalOrders;
+    MetricBuilder.persistentMetrics.purchases.successfulPurchases = orderStats.totalOrders;
   }
 
   setMetric(metricName, metricValue, type, unit) {
+    const isInt = Number.isInteger(metricValue);
     const metricRecord = {
       name: metricName,
       unit,
       [type]: {
         dataPoints: [
           {
-            asInt: metricValue,
+            asInt: isInt ? metricValue : undefined,
+            asDouble: isInt ? undefined : metricValue,
             timeUnixNano: Date.now() * 1000000,
           },
         ],
@@ -91,13 +124,20 @@ class MetricBuilder {
     }
   }
 
-  async httpMetrics() {
+  async httpMetrics(intervalTimeInSeconds) {
     const httpMetricsObj = MetricBuilder.persistentMetrics.http;
     this.setMetric("totalRequests", httpMetricsObj.totalRequests, "sum", "1");
     this.setMetric("successfulRequests", httpMetricsObj.successfulRequests, "sum", "1");
     this.setMetric("failedRequests", httpMetricsObj.failedRequests, "sum", "1");
     this.setMetric("averageResponseTime", httpMetricsObj.averageResponseTime, "gauge", "ms");
-    this.setMetric("requestsPerSecond", httpMetricsObj.requestsPerSecond, "gauge", "1");
+    this.setMetric('pizzaCreationTime', httpMetricsObj.pizzaCreationTime, 'gauge', 'ms');
+    const requestsPerSecond = httpMetricsObj.requestsSinceLastUpdate / intervalTimeInSeconds;
+    httpMetricsObj.requestsSinceLastUpdate = 0;
+    this.setMetric("requestsPerSecond", requestsPerSecond, "gauge", "1");
+    this.setMetric("getRequests", httpMetricsObj.getRequests, "sum", "1");
+    this.setMetric("postRequests", httpMetricsObj.postRequests, "sum", "1");
+    this.setMetric("putRequests", httpMetricsObj.putRequests, "sum", "1");
+    this.setMetric("deleteRequests", httpMetricsObj.deleteRequests, "sum", "1");
   }
   async systemMetrics() {
     const cpuUsage = getCpuUsagePercentage();
@@ -134,12 +174,8 @@ class MetricBuilder {
     this.setMetric("successfulAuths", authMetricsObj.successfulAuths, "sum", "1");
     this.setMetric("failedAuths", authMetricsObj.failedAuths, "sum", "1");
   }
-  async collectMetrics() {
-    if (MetricBuilder.persistentMetricsInitialized === false) {
-      await this.initializePersistentMetrics();
-      MetricBuilder.persistentMetricsInitialized = true;
-    }
-    this.httpMetrics();
+  async collectMetrics(intervalTimeInSeconds) {
+    this.httpMetrics(intervalTimeInSeconds);
     this.systemMetrics();
     this.userMetrics();
     this.purchaseMetrics();
