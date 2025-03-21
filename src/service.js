@@ -4,10 +4,13 @@ const orderRouter = require('./routes/orderRouter.js');
 const franchiseRouter = require('./routes/franchiseRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
+const metrics = require('./metrics.js');
 
 const app = express();
 app.use(express.json());
 app.use(setAuthUser);
+app.use(metrics.requestTracker); // Add requestTracker middleware
+app.use(metrics.responseLogger); // Add responseLogger middleware
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
@@ -15,6 +18,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
 });
+metrics.sendMetricsPeriodically(1000 * 5);
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
