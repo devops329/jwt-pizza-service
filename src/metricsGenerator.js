@@ -1,4 +1,4 @@
-import config from './config.js';
+const config = require('./config.js');
 const url = config.grafana.url;
 const apiKey = config.grafana.apiKey;
 
