@@ -93,9 +93,9 @@ class MetricBuilder {
     MetricBuilder.persistentMetrics.users.totalUsers = totalUsers;
     // initialize totalProfits and totalPurchases
     const orderStats = await DB.getDinerOrderStats();
-    MetricBuilder.persistentMetrics.purchases.totalProfits = orderStats.totalRevenue;
-    MetricBuilder.persistentMetrics.purchases.totalPurchases = orderStats.totalOrders;
-    MetricBuilder.persistentMetrics.purchases.successfulPurchases = orderStats.totalOrders;
+    MetricBuilder.persistentMetrics.purchases.totalProfits = !orderStats.totalRevenue ? 0 : isNaN(orderStats.totalRevenue) ? 0 : orderStats.totalRevenue;
+    MetricBuilder.persistentMetrics.purchases.totalPurchases = !orderStats.totalOrders ? 0 : isNaN(orderStats.totalOrders) ? 0 : orderStats.totalOrders;
+    MetricBuilder.persistentMetrics.purchases.successfulPurchases = orderStats.totalOrders ? 0 : isNaN(orderStats.totalOrders) ? 0 : orderStats.totalOrders;
   }
 
   setMetric(metricName, metricValue, type, unit) {
