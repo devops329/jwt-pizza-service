@@ -51,6 +51,10 @@ const responseLogger = (req, res, next) => {
     } else if (req.originalUrl.includes('/api/auth') && req.method == "DELETE") {
       MetricBuilder.persistentMetrics.auth.totalLogouts++;
       MetricBuilder.persistentMetrics.auth.totalAuths++;
+      const token = req.headers.authorization.split(' ')[1];
+      if (token) {
+        delete MetricBuilder.persistentMetrics.users.activeUsers[token];
+      }
     }
     // handle profit metrics
     if (req.originalUrl.includes('/api/order') && req.method == "POST") {
