@@ -11,24 +11,34 @@ const responseLogger = (req, res, next) => {
     // handle http metrics
     const statusCode = res.statusCode;
     console.log(`${req.method} ${req.originalUrl} (${statusCode})`);
-    MetricBuilder.persistentMetrics.http.totalRequests++;
+    if (req.method == "GET") {
+      MetricBuilder.persistentMetrics.http.totalRequests++;
+      MetricBuilder.persistentMetrics.http.getRequests++;
+    } else if (req.method == "POST") {
+      MetricBuilder.persistentMetrics.http.totalRequests++;
+      MetricBuilder.persistentMetrics.http.postRequests++;
+    } else if (req.method == "PUT") {
+      MetricBuilder.persistentMetrics.http.totalRequests++;
+      MetricBuilder.persistentMetrics.http.putRequests++;
+    } else if (req.method == "DELETE") {
+      MetricBuilder.persistentMetrics.http.totalRequests++;
+      MetricBuilder.persistentMetrics.http.deleteRequests++;
+    } else {
+      next();
+      return;
+    }
     MetricBuilder.persistentMetrics.http.requestsSinceLastUpdate++;
     if (statusCode >= 200 && statusCode < 300) {
       MetricBuilder.persistentMetrics.http.successfulRequests++;
     } else {
       MetricBuilder.persistentMetrics.http.failedRequests++;
     }
-    const totalResponseTimes = MetricBuilder.persistentMetrics.http.totalRequests * MetricBuilder.persistentMetrics.http.averageResponseTime;
-    MetricBuilder.persistentMetrics.http.averageResponseTime = (totalResponseTimes + (Date.now() - req.requestTime)) / MetricBuilder.persistentMetrics.http.totalRequests;
-    if (req.method == "GET") {
-      MetricBuilder.persistentMetrics.http.getRequests++;
-    } else if (req.method == "POST") {
-      MetricBuilder.persistentMetrics.http.postRequests++;
-    } else if (req.method == "PUT") {
-      MetricBuilder.persistentMetrics.http.putRequests++;
-    } else if (req.method == "DELETE") {
-      MetricBuilder.persistentMetrics.http.deleteRequests++;
+    const responseTimes = MetricBuilder.persistentMetrics.http.responseTimes;
+    if (responseTimes.length > 32) {
+      responseTimes.shift();
     }
+    responseTimes.push(Date.now() - req.requestTime);
+    MetricBuilder.persistentMetrics.http.averageResponseTime = Math.round(responseTimes.reduce((total, time) => total + time, 0) / responseTimes.length);
     // handle auth metrics
     const userInfo = req.user;
     if (userInfo) {
@@ -40,6 +50,11 @@ const responseLogger = (req, res, next) => {
     if (req.originalUrl.includes('/api/auth/') && req.method == "POST") {
       MetricBuilder.persistentMetrics.auth.totalRegistrations++;
       MetricBuilder.persistentMetrics.auth.totalAuths++;
+      if (statusCode >= 200 && statusCode < 300) {
+        MetricBuilder.persistentMetrics.auth.successfulAuths++;
+      } else {
+        MetricBuilder.persistentMetrics.auth.failedAuths++;
+      }
     } else if (req.originalUrl.includes('/api/auth') && req.method == "PUT") {
       MetricBuilder.persistentMetrics.auth.totalLogins++;
       MetricBuilder.persistentMetrics.auth.totalAuths++;
@@ -51,6 +66,11 @@ const responseLogger = (req, res, next) => {
     } else if (req.originalUrl.includes('/api/auth') && req.method == "DELETE") {
       MetricBuilder.persistentMetrics.auth.totalLogouts++;
       MetricBuilder.persistentMetrics.auth.totalAuths++;
+      if (statusCode >= 200 && statusCode < 300) {
+        MetricBuilder.persistentMetrics.auth.successfulAuths++;
+      } else {
+        MetricBuilder.persistentMetrics.auth.failedAuths++;
+      }
       const token = req.headers.authorization.split(' ')[1];
       if (token) {
         delete MetricBuilder.persistentMetrics.users.activeUsers[token];

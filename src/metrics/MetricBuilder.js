@@ -44,6 +44,7 @@ class MetricBuilder {
       totalRequests: 0,
       successfulRequests: 0,
       failedRequests: 0,
+      responseTimes: [],
       averageResponseTime: 0,
       pizzaCreationTime: 0,
       requestsSinceLastUpdate: 0,
