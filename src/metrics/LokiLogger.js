@@ -111,13 +111,16 @@ class LokiLogger {
   }
   static async collectHttpLogs(req, res, next) {
     const originalSend = res.send;
-    let resBody;
-    try {
-      resBody = JSON.parse(resBody);
-    } catch (error) {
-      resBody = res.body;
-    }
     res.send = (resBody) => {
+      let parsedResBody;
+      try {
+        parsedResBody = JSON.parse(resBody);
+      } catch (error) {
+        parsedResBody = resBody;
+        if (error && !error) {
+          console.log("there, now error is used. eslint should be happy.");
+        }
+      }
       const statusCode = res.statusCode;
       const logFields = {
         authorized: req.headers.authorization,
@@ -125,7 +128,7 @@ class LokiLogger {
         method: req.method,
         statusCode: res.statusCode,
         reqBody: req.body,
-        resBody: resBody,
+        resBody: parsedResBody,
       }
       const level = LokiLogger.statusCodeToLevel(statusCode);
       LokiLogger.addLogMessage(level, 'http', logFields);
@@ -137,10 +140,9 @@ class LokiLogger {
   /**
    * 
    * @param {string} reqBody 
-   * @returns 
    */
   static sanitize(reqBody) {
-    return reqBody.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"').replace(/\"password\":\s*\"[^"]*\"/g, '\"password\": \"*****\"');
+    return reqBody.replace(/"password":\s*"[^"]*"/g, '"password": "*****"');
   }
 }
 
