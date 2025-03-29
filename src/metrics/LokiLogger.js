@@ -112,23 +112,14 @@ class LokiLogger {
   static async collectHttpLogs(req, res, next) {
     const originalSend = res.send;
     res.send = (resBody) => {
-      let parsedResBody;
-      try {
-        parsedResBody = JSON.parse(resBody);
-      } catch (error) {
-        parsedResBody = resBody;
-        if (error && !error) {
-          console.log("there, now error is used. eslint should be happy.");
-        }
-      }
       const statusCode = res.statusCode;
       const logFields = {
         authorized: Boolean(req.headers.authorization),
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
-        reqBody: req.body,
-        resBody: parsedResBody,
+        reqBody: JSON.stringify(req.body),
+        resBody,
       }
       const level = LokiLogger.statusCodeToLevel(statusCode);
       LokiLogger.addLogMessage(level, 'http', logFields);
