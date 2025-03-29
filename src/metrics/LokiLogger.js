@@ -118,8 +118,8 @@ class LokiLogger {
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
-        reqBody: LokiLogger.sanitize(JSON.stringify(req.body)),
-        resBody: LokiLogger.sanitize(resBody),
+        reqBody: LokiLogger.sanitize(typeof req.body === 'string' ? req.body : JSON.stringify(req.body)),
+        resBody: LokiLogger.sanitize(typeof resBody === 'string' ? resBody : JSON.stringify(resBody)),
       }
       const level = LokiLogger.statusCodeToLevel(statusCode);
       LokiLogger.addLogMessage(level, 'http', logFields);
