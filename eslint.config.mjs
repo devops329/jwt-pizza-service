@@ -6,12 +6,20 @@ import pluginJest from 'eslint-plugin-jest';
 export default [
   {
     files: ["**/*.js"],
-    languageOptions: { sourceType: "commonjs", globals: globals.node }
+    languageOptions: { sourceType: "commonjs", globals: globals.node },
+    rules: { "no-useless-escape": "off" }
   },
-  { languageOptions: { globals: globals.browser } },
+  { 
+    languageOptions: { globals: globals.browser },
+    rules: { "no-useless-escape": "off" }
+  },
   {
     languageOptions: { globals: pluginJest.environments.globals.globals },
-    plugins: {jest: pluginJest}
+    plugins: { jest: pluginJest },
+    rules: { "no-useless-escape": "off" }
   },
-  pluginJs.configs.recommended,
+  {
+    ...pluginJs.configs.recommended,
+    rules: { ...pluginJs.configs.recommended.rules, "no-useless-escape": "off" }
+  },
 ];

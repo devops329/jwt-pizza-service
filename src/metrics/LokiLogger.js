@@ -142,7 +142,7 @@ class LokiLogger {
    * @param {string} reqBody 
    */
   static sanitize(reqBody) {
-    return reqBody.replace(/"password":\s*"[^"]*"/g, '"password": "*****"');
+    return reqBody.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"').replace(/\"password\":\s*\"[^"]*\"/g, '\"password\": \"*****\"');
   }
 }
 
