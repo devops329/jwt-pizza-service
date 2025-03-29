@@ -123,7 +123,7 @@ class LokiLogger {
       }
       const statusCode = res.statusCode;
       const logFields = {
-        authorized: req.headers.authorization,
+        authorized: Boolean(req.headers.authorization),
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
