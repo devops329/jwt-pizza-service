@@ -1,7 +1,7 @@
 const config = require('../config');
 
 class LokiLogger {
-  static logs = [];
+  static logs = {streams: []};
   static interval = null;
   static intervalTimeInSeconds = 10;
   /**
@@ -17,21 +17,19 @@ class LokiLogger {
       throw new Error('level must be one of: info, warn, error, debug');
     }
     const timestamp = Math.floor(Date.now() / 1000) * 1_000_000_000; // current time in nanoseconds
-    LokiLogger.logs.push({
-      streams: [
-        {
-          stream: {
-            component: config.logs.source,
-            level,
-            type,
-          },
-          values: [
-            String(timestamp),
-            JSON.stringify(logFields)
-          ]
-        }
-      ]
-    })
+    LokiLogger.logs.streams.push(
+      {
+        stream: {
+          component: config.logs.source,
+          level,
+          type,
+        },
+        values: [[
+          String(timestamp),
+          JSON.stringify(logFields)
+        ]]
+      }
+    );
   }
   static setIntervalTimeInSeconds(intervalTimeInSeconds) {
     if (typeof intervalTimeInSeconds !== 'number') {
@@ -61,7 +59,7 @@ class LokiLogger {
     }
   }
   static async sendLogsToLoki() {
-    if (LokiLogger.logs.length === 0) {
+    if (LokiLogger.logs.streams.length === 0) {
       return;
     }
     const logs = LokiLogger.logs;
@@ -72,13 +70,14 @@ class LokiLogger {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${config.logs.apiKey}`
         },
-        body: JSON.stringify(logs)
+        body: JSON.stringify(logs),
       });
       if (!response.ok) {
-        console.error(`Failed to push logs to Loki: ${response.statusText}`);
+        const responseBody = await response.text();
+        console.error(`Failed to push logs to Loki: ${responseBody}`);
       } else {
         console.log(`Pushed logs to Loki`);
-        LokiLogger.logs = [];
+        LokiLogger.logs.streams = [];
       }
     } catch (error) {
       console.error('Error pushing logs to Loki:', error);
@@ -99,12 +98,12 @@ class LokiLogger {
     res.send = (resBody) => {
       const statusCode = res.statusCode;
       const logFields = {
-        authorized: Boolean(req.headers.authorization),
+        authorized: req.headers.authorization,
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
         reqBody: req.body,
-        resBody,
+        resBody: JSON.parse(resBody),
       }
       const level = LokiLogger.statusCodeToLevel(statusCode);
       LokiLogger.addLogMessage(level, 'http', logFields);
@@ -112,6 +111,15 @@ class LokiLogger {
       return res.send(resBody);
     };
     next();
+  }
+  /**
+   * 
+   * @param {string} reqBody 
+   * @returns 
+   */
+  static sanitize(reqBody) {
+    const sanitized = reqBody.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"');
+    return sanitized;
   }
 }
 
