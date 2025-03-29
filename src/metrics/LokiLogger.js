@@ -6,17 +6,36 @@ class LokiLogger {
   static intervalTimeInSeconds = 10;
   /**
    * @param {'info'|'warn'|'error'|'debug'} level
-   * @param {'http'} type
+   * @param {'http' | 'DB' | 'factory-requests' | 'unhandled-exceptions'} type
    * @param {object} logFields
    */
   static addLogMessage(level, type, logFields = {}) {
     if (Object.keys(logFields).length === 0) {
-      throw new Error('logFields must be an object with at least one key-value pair');
+      return;
     }
     if (!['info', 'warn', 'error', 'debug'].includes(level)) {
       throw new Error('level must be one of: info, warn, error, debug');
     }
+    const matchingStreamObj = LokiLogger.logs.streams.find(stream => {
+      if (Object.keys(stream.stream).length !== Object.keys(logFields).length) {
+        return false;
+      }
+      for (const key in stream.stream) {
+        if (stream.stream[key] !== logFields[key]) {
+          return false;
+        }
+      }
+      return true;
+    });
     const timestamp = Math.floor(Date.now() / 1000) * 1_000_000_000; // current time in nanoseconds
+    const valuePair = [
+      String(timestamp),
+      JSON.stringify(logFields)
+    ];
+    if (matchingStreamObj) {
+      matchingStreamObj.values.push(valuePair);
+      return;
+    }
     LokiLogger.logs.streams.push(
       {
         stream: {
@@ -24,10 +43,7 @@ class LokiLogger {
           level,
           type,
         },
-        values: [[
-          String(timestamp),
-          JSON.stringify(logFields)
-        ]]
+        values: [valuePair]
       }
     );
   }
@@ -70,7 +86,7 @@ class LokiLogger {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${config.logs.apiKey}`
         },
-        body: JSON.stringify(logs),
+        body: LokiLogger.sanitize(JSON.stringify(logs)),
       });
       if (!response.ok) {
         const responseBody = await response.text();
@@ -95,6 +111,12 @@ class LokiLogger {
   }
   static async collectHttpLogs(req, res, next) {
     const originalSend = res.send;
+    let resBody;
+    try {
+      resBody = JSON.parse(resBody);
+    } catch (error) {
+      resBody = res.body;
+    }
     res.send = (resBody) => {
       const statusCode = res.statusCode;
       const logFields = {
@@ -103,7 +125,7 @@ class LokiLogger {
         method: req.method,
         statusCode: res.statusCode,
         reqBody: req.body,
-        resBody: JSON.parse(resBody),
+        resBody: resBody,
       }
       const level = LokiLogger.statusCodeToLevel(statusCode);
       LokiLogger.addLogMessage(level, 'http', logFields);
@@ -118,8 +140,7 @@ class LokiLogger {
    * @returns 
    */
   static sanitize(reqBody) {
-    const sanitized = reqBody.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"');
-    return sanitized;
+    return reqBody.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"').replace(/\"password\":\s*\"[^"]*\"/g, '\"password\": \"*****\"');
   }
 }
 
