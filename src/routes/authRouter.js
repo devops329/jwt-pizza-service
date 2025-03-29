@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config.js');
 const { asyncHandler } = require('../endpointHelper.js');
 const { DB, Role } = require('../database/database.js');
+const LokiLogger = require('../metrics/LokiLogger.js');
 
 const authRouter = express.Router();
 

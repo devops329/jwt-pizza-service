@@ -5,25 +5,30 @@ class LokiLogger {
   static interval = null;
   static intervalTimeInSeconds = 10;
   /**
-   * 
-   * @param {any[]} logMessages 
-   * @param {object} labels 
+   * @param {'info'|'warn'|'error'|'debug'} level
+   * @param {'http'} type
+   * @param {object} logFields
    */
-  static addLogMessage(logMessages, labels) {
-    if (!Array.isArray(logMessages)) {
-      throw new Error('logMessages must be an array of strings');
+  static addLogMessage(level, type, logFields = {}) {
+    if (Object.keys(logFields).length === 0) {
+      throw new Error('logFields must be an object with at least one key-value pair');
     }
-    if (typeof labels !== 'object') {
-      throw new Error('labels must be an object');
+    if (!['info', 'warn', 'error', 'debug'].includes(level)) {
+      throw new Error('level must be one of: info, warn, error, debug');
     }
+    const timestamp = Math.floor(Date.now() / 1000) * 1_000_000_000; // current time in nanoseconds
     LokiLogger.logs.push({
       streams: [
         {
-          stream: Object.fromEntries(Object.entries(labels).map(([key, value]) => [String(key), String(value)])),
-          values: logMessages.map((logMessage) => {
-            const timestamp = (Math.floor(Date.now() / 1000) * 1_000_000_000); // current time in nanoseconds
-            return [String(timestamp), String(logMessage)];
-          })
+          stream: {
+            component: config.logs.source,
+            level,
+            type,
+          },
+          values: [
+            String(timestamp),
+            JSON.stringify(logFields)
+          ]
         }
       ]
     })
@@ -78,6 +83,35 @@ class LokiLogger {
     } catch (error) {
       console.error('Error pushing logs to Loki:', error);
     }
+  }
+  static statusCodeToLevel(statusCode) {
+    if (statusCode >= 200 && statusCode < 300) {
+      return 'info';
+    } else if (statusCode >= 400 && statusCode < 500) {
+      return 'warn';
+    } else if (statusCode >= 500) {
+      return 'error';
+    }
+    return 'debug';
+  }
+  static async collectHttpLogs(req, res, next) {
+    const originalSend = res.send;
+    res.send = (resBody) => {
+      const statusCode = res.statusCode;
+      const logFields = {
+        authorized: Boolean(req.headers.authorization),
+        path: req.originalUrl,
+        method: req.method,
+        statusCode: res.statusCode,
+        reqBody: req.body,
+        resBody,
+      }
+      const level = LokiLogger.statusCodeToLevel(statusCode);
+      LokiLogger.addLogMessage(level, 'http', logFields);
+      res.send = originalSend;
+      return res.send(resBody);
+    };
+    next();
   }
 }
 

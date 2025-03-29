@@ -12,6 +12,7 @@ app.use(express.json());
 app.use(setAuthUser);
 app.use(metrics.requestTracker); // Add requestTracker middleware
 app.use(metrics.responseLogger); // Add responseLogger middleware
+app.use(LokiLogger.collectHttpLogs); // Add LokiLogger middleware
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
