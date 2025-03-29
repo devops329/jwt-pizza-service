@@ -62,6 +62,10 @@ jobs:
               source: '${{ secrets.GRAFANA_SOURCE }}',
               url: '${{ secrets.GRAFANA_URL }}',
               apiKey: '${{ secrets.GRAFANA_API_KEY }}'
+            },
+            logs: {
+              url: '${{ secrets.LOGS_URL }}',
+              apiKey: '${{ secrets.LOGS_API_KEY }}'
             }
           };" > src/config.js
 

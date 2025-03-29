@@ -5,6 +5,7 @@ const franchiseRouter = require('./routes/franchiseRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
 const metrics = require('./metrics.js');
+const LokiLogger = require('./metrics/LokiLogger.js');
 
 const app = express();
 app.use(express.json());
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 });
 if (process.env.NODE_ENV !== 'test') {
   metrics.sendMetricsPeriodically(1000 * 5);
+  LokiLogger.startInterval();
 }
 
 const apiRouter = express.Router();
