@@ -1,8 +1,8 @@
-import { sleep, check, group, fail } from 'k6'
-import http from 'k6/http'
-import jsonpath from 'https://jslib.k6.io/jsonpath/1.0.2/index.js'
+const { sleep, check, group, fail } = require('k6');
+const http = require('k6/http');
+const jsonpath = require('https://jslib.k6.io/jsonpath/1.0.2/index.js');
 
-export const options = {
+module.exports.options = {
   cloud: {
     distribution: { 'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 100 } },
     apm: [],
@@ -22,12 +22,12 @@ export const options = {
       exec: 'scenario_1',
     },
   },
-}
+};
 
-export function scenario_1() {
-  let response
+module.exports.scenario_1 = function () {
+  let response;
 
-  const vars = {}
+  const vars = {};
 
   group('Login and Order - https://pizza.myjwtpizza.click/', function () {
     // Homepage
@@ -51,8 +51,8 @@ export function scenario_1() {
         'sec-gpc': '1',
         'upgrade-insecure-requests': '1',
       },
-    })
-    sleep(12.7)
+    });
+    sleep(12.7);
 
     // Login
     response = http.put(
@@ -75,15 +75,15 @@ export function scenario_1() {
           'sec-gpc': '1',
         },
       }
-    )
+    );
     if (!check(response, { 'status equals 200': response => response.status.toString() === '200' })) {
       console.log(response.body);
       fail('Login was *not* 200');
     }
 
-    vars['token1'] = jsonpath.query(response.json(), '$.token')[0]
+    vars['token1'] = jsonpath.query(response.json(), '$.token')[0];
 
-    sleep(19.9)
+    sleep(19.9);
 
     // Menu
     response = http.get('https://pizza-service.myjwtpizza.click/api/order/menu', {
@@ -103,7 +103,7 @@ export function scenario_1() {
         'sec-fetch-site': 'same-site',
         'sec-gpc': '1',
       },
-    })
+    });
 
     // Franchise
     response = http.get('https://pizza-service.myjwtpizza.click/api/franchise', {
@@ -123,8 +123,8 @@ export function scenario_1() {
         'sec-fetch-site': 'same-site',
         'sec-gpc': '1',
       },
-    })
-    sleep(11.7)
+    });
+    sleep(11.7);
 
     // Purchase Pizza
     response = http.post(
@@ -148,7 +148,7 @@ export function scenario_1() {
           'sec-gpc': '1',
         },
       }
-    )
+    );
 
     if (!check(response, { 'status equals 200': response => response.status.toString() === '200' })) {
       console.log(response.body);
@@ -179,7 +179,7 @@ export function scenario_1() {
           'sec-gpc': '1',
         },
       }
-    )
+    );
 
-  })
-}
+  });
+};
