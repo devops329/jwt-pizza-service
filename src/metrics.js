@@ -88,9 +88,8 @@ const responseLogger = (req, res, next) => {
         MetricBuilder.persistentMetrics.purchases.totalProfits += purchaseAmount;
         const totalPurchaseAmounts = MetricBuilder.persistentMetrics.purchases.successfulPurchases * MetricBuilder.persistentMetrics.purchases.averagePurchaseAmount;
         MetricBuilder.persistentMetrics.purchases.averagePurchaseAmount = (totalPurchaseAmounts + purchaseAmount) / MetricBuilder.persistentMetrics.purchases.successfulPurchases;
-
       } else {
-        MetricBuilder.persistentMetrics.purchases.failedPurchases++;
+        MetricBuilder.persistentMetrics.purchases.failedPurchases += 1;
       }
     }
   });

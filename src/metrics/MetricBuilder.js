@@ -55,7 +55,7 @@ class MetricBuilder {
     },
     users: {
       totalUsers: 0,
-      activeUsers: {}, // key: userId, value: lastActiveTime
+      activeUsers: {}, // key: authToken, value: lastActiveTime
     },
     purchases: {
       totalPurchases: 0,

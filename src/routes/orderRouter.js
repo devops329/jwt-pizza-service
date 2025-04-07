@@ -90,9 +90,10 @@ orderRouter.put(
 // chaos monkey test
 orderRouter.post('/', (req, res, next) => {
   if (enableChaos && Math.random() < 0.5) {
-    throw new StatusCodeError('Chaos monkey', 500);
+    res.status(500).send({ message: 'Chaos monkey test triggered' });
+  } else {
+    next();
   }
-  next();
 });
 
 // createOrder
