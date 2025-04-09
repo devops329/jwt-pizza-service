@@ -13,7 +13,7 @@ class DB {
   async getMenu() {
     const connection = await this.getConnection();
     try {
-      const rows = await this.query(connection, `SELECT * FROM menu`);
+      const rows = await this.query(connection, 'SELECT * FROM menu');
       return rows;
     } finally {
       connection.end();
@@ -23,7 +23,7 @@ class DB {
   async addMenuItem(item) {
     const connection = await this.getConnection();
     try {
-      const addResult = await this.query(connection, `INSERT INTO menu (title, description, image, price) VALUES (?, ?, ?, ?)`, [item.title, item.description, item.image, item.price]);
+      const addResult = await this.query(connection, 'INSERT INTO menu (title, description, image, price) VALUES (?, ?, ?, ?)', [item.title, item.description, item.image, item.price]);
       return { ...item, id: addResult.insertId };
     } finally {
       connection.end();
@@ -33,7 +33,7 @@ class DB {
   async getTotalUsers() {
     const connection = await this.getConnection();
     try {
-      const [rows] = await connection.execute(`SELECT COUNT(*) AS totalUsers FROM user`);
+      const [rows] = await connection.execute('SELECT COUNT(*) AS totalUsers FROM user');
       return rows[0].totalUsers;
     } finally {
       connection.end();
@@ -45,17 +45,17 @@ class DB {
     try {
       const hashedPassword = await bcrypt.hash(user.password, 10);
 
-      const userResult = await this.query(connection, `INSERT INTO user (name, email, password) VALUES (?, ?, ?)`, [user.name, user.email, hashedPassword]);
+      const userResult = await this.query(connection, 'INSERT INTO user (name, email, password) VALUES (?, ?, ?)', [user.name, user.email, hashedPassword]);
       const userId = userResult.insertId;
       for (const role of user.roles) {
         switch (role.role) {
           case Role.Franchisee: {
             const franchiseId = await this.getID(connection, 'name', role.object, 'franchise');
-            await this.query(connection, `INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)`, [userId, role.role, franchiseId]);
+            await this.query(connection, 'INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)', [userId, role.role, franchiseId]);
             break;
           }
           default: {
-            await this.query(connection, `INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)`, [userId, role.role, 0]);
+            await this.query(connection, 'INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)', [userId, role.role, 0]);
             break;
           }
         }
@@ -69,13 +69,13 @@ class DB {
   async getUser(email, password) {
     const connection = await this.getConnection();
     try {
-      const userResult = await this.query(connection, `SELECT * FROM user WHERE email=?`, [email]);
+      const userResult = await this.query(connection, 'SELECT * FROM user WHERE email=?', [email]);
       const user = userResult[0];
       if (!user || !(await bcrypt.compare(password, user.password))) {
         throw new StatusCodeError('unknown user', 404);
       }
 
-      const roleResult = await this.query(connection, `SELECT * FROM userRole WHERE userId=?`, [user.id]);
+      const roleResult = await this.query(connection, 'SELECT * FROM userRole WHERE userId=?', [user.id]);
       const roles = roleResult.map((r) => {
         return { objectId: r.objectId || undefined, role: r.role };
       });
@@ -89,17 +89,21 @@ class DB {
   async updateUser(userId, email, password) {
     const connection = await this.getConnection();
     try {
+      const updates = [];
       const params = [];
       if (password) {
         const hashedPassword = await bcrypt.hash(password, 10);
-        params.push(`password='${hashedPassword}'`);
+        updates.push('password=?');
+        params.push(hashedPassword);
       }
       if (email) {
-        params.push(`email='${email}'`);
+        updates.push('email=?');
+        params.push(email);
       }
-      if (params.length > 0) {
-        const query = `UPDATE user SET ${params.join(', ')} WHERE id=${userId}`;
-        await this.query(connection, query);
+      if (updates.length > 0) {
+        const query = `UPDATE user SET ${updates.join(', ')} WHERE id=?`;
+        params.push(userId);
+        await this.query(connection, query, params);
       }
       return this.getUser(email, password);
     } finally {
@@ -111,7 +115,7 @@ class DB {
     token = this.getTokenSignature(token);
     const connection = await this.getConnection();
     try {
-      await this.query(connection, `INSERT INTO auth (token, userId) VALUES (?, ?)`, [token, userId]);
+      await this.query(connection, 'INSERT INTO auth (token, userId) VALUES (?, ?)', [token, userId]);
     } finally {
       connection.end();
     }
@@ -121,7 +125,7 @@ class DB {
     token = this.getTokenSignature(token);
     const connection = await this.getConnection();
     try {
-      const authResult = await this.query(connection, `SELECT userId FROM auth WHERE token=?`, [token]);
+      const authResult = await this.query(connection, 'SELECT userId FROM auth WHERE token=?', [token]);
       return authResult.length > 0;
     } finally {
       connection.end();
@@ -132,7 +136,7 @@ class DB {
     token = this.getTokenSignature(token);
     const connection = await this.getConnection();
     try {
-      await this.query(connection, `DELETE FROM auth WHERE token=?`, [token]);
+      await this.query(connection, 'DELETE FROM auth WHERE token=?', [token]);
     } finally {
       connection.end();
     }
@@ -144,7 +148,7 @@ class DB {
       const offset = this.getOffset(page, config.db.listPerPage);
       const orders = await this.query(connection, `SELECT id, franchiseId, storeId, date FROM dinerOrder WHERE dinerId=? LIMIT ${offset},${config.db.listPerPage}`, [user.id]);
       for (const order of orders) {
-        let items = await this.query(connection, `SELECT id, menuId, description, price FROM orderItem WHERE orderId=?`, [order.id]);
+        let items = await this.query(connection, 'SELECT id, menuId, description, price FROM orderItem WHERE orderId=?', [order.id]);
         order.items = items;
       }
       return { dinerId: user.id, orders: orders, page };
@@ -156,11 +160,11 @@ class DB {
   async addDinerOrder(user, order) {
     const connection = await this.getConnection();
     try {
-      const orderResult = await this.query(connection, `INSERT INTO dinerOrder (dinerId, franchiseId, storeId, date) VALUES (?, ?, ?, now())`, [user.id, order.franchiseId, order.storeId]);
+      const orderResult = await this.query(connection, 'INSERT INTO dinerOrder (dinerId, franchiseId, storeId, date) VALUES (?, ?, ?, now())', [user.id, order.franchiseId, order.storeId]);
       const orderId = orderResult.insertId;
       for (const item of order.items) {
         const menuId = await this.getID(connection, 'id', item.menuId, 'menu');
-        await this.query(connection, `INSERT INTO orderItem (orderId, menuId, description, price) VALUES (?, ?, ?, ?)`, [orderId, menuId, item.description, item.price]);
+        await this.query(connection, 'INSERT INTO orderItem (orderId, menuId, description, price) VALUES (?, ?, ?, ?)', [orderId, menuId, item.description, item.price]);
       }
       return { ...order, id: orderId };
     } finally {
@@ -171,7 +175,7 @@ class DB {
   async getDinerOrderStats() {
     const connection = await this.getConnection();
     try {
-      const [rows] = await connection.execute(`SELECT COUNT(*) AS totalOrders, SUM(oi.price) AS totalRevenue FROM dinerOrder AS do JOIN orderItem AS oi ON do.id=oi.orderId`);
+      const [rows] = await connection.execute('SELECT COUNT(*) AS totalOrders, SUM(oi.price) AS totalRevenue FROM dinerOrder AS do JOIN orderItem AS oi ON do.id=oi.orderId');
       return rows[0];
     } finally {
       connection.end();
@@ -182,7 +186,7 @@ class DB {
     const connection = await this.getConnection();
     try {
       for (const admin of franchise.admins) {
-        const adminUser = await this.query(connection, `SELECT id, name FROM user WHERE email=?`, [admin.email]);
+        const adminUser = await this.query(connection, 'SELECT id, name FROM user WHERE email=?', [admin.email]);
         if (adminUser.length == 0) {
           throw new StatusCodeError(`unknown user for franchise admin ${admin.email} provided`, 404);
         }
@@ -190,11 +194,11 @@ class DB {
         admin.name = adminUser[0].name;
       }
 
-      const franchiseResult = await this.query(connection, `INSERT INTO franchise (name) VALUES (?)`, [franchise.name]);
+      const franchiseResult = await this.query(connection, 'INSERT INTO franchise (name) VALUES (?)', [franchise.name]);
       franchise.id = franchiseResult.insertId;
 
       for (const admin of franchise.admins) {
-        await this.query(connection, `INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)`, [admin.id, Role.Franchisee, franchise.id]);
+        await this.query(connection, 'INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)', [admin.id, Role.Franchisee, franchise.id]);
       }
 
       return franchise;
@@ -208,9 +212,9 @@ class DB {
     try {
       await connection.beginTransaction();
       try {
-        await this.query(connection, `DELETE FROM store WHERE franchiseId=?`, [franchiseId]);
-        await this.query(connection, `DELETE FROM userRole WHERE objectId=?`, [franchiseId]);
-        await this.query(connection, `DELETE FROM franchise WHERE id=?`, [franchiseId]);
+        await this.query(connection, 'DELETE FROM store WHERE franchiseId=?', [franchiseId]);
+        await this.query(connection, 'DELETE FROM userRole WHERE objectId=?', [franchiseId]);
+        await this.query(connection, 'DELETE FROM franchise WHERE id=?', [franchiseId]);
         await connection.commit();
       } catch {
         await connection.rollback();
@@ -224,12 +228,12 @@ class DB {
   async getFranchises(authUser) {
     const connection = await this.getConnection();
     try {
-      const franchises = await this.query(connection, `SELECT id, name FROM franchise`);
+      const franchises = await this.query(connection, 'SELECT id, name FROM franchise');
       for (const franchise of franchises) {
         if (authUser?.isRole(Role.Admin)) {
           await this.getFranchise(franchise);
         } else {
-          franchise.stores = await this.query(connection, `SELECT id, name FROM store WHERE franchiseId=?`, [franchise.id]);
+          franchise.stores = await this.query(connection, 'SELECT id, name FROM store WHERE franchiseId=?', [franchise.id]);
         }
       }
       return franchises;
@@ -264,7 +268,7 @@ class DB {
 
       franchise.stores = await this.query(
         connection,
-        `SELECT s.id, s.name, COALESCE(SUM(oi.price), 0) AS totalRevenue FROM dinerOrder AS do JOIN orderItem AS oi ON do.id=oi.orderId RIGHT JOIN store AS s ON s.id=do.storeId WHERE s.franchiseId=? GROUP BY s.id`,
+        'SELECT s.id, s.name, COALESCE(SUM(oi.price), 0) AS totalRevenue FROM dinerOrder AS do JOIN orderItem AS oi ON do.id=oi.orderId RIGHT JOIN store AS s ON s.id=do.storeId WHERE s.franchiseId=? GROUP BY s.id',
         [franchise.id]
       );
 
@@ -277,7 +281,7 @@ class DB {
   async createStore(franchiseId, store) {
     const connection = await this.getConnection();
     try {
-      const insertResult = await this.query(connection, `INSERT INTO store (franchiseId, name) VALUES (?, ?)`, [franchiseId, store.name]);
+      const insertResult = await this.query(connection, 'INSERT INTO store (franchiseId, name) VALUES (?, ?)', [franchiseId, store.name]);
       return { id: insertResult.insertId, franchiseId, name: store.name };
     } finally {
       connection.end();
@@ -287,7 +291,7 @@ class DB {
   async deleteStore(franchiseId, storeId) {
     const connection = await this.getConnection();
     try {
-      await this.query(connection, `DELETE FROM store WHERE franchiseId=? AND id=?`, [franchiseId, storeId]);
+      await this.query(connection, 'DELETE FROM store WHERE franchiseId=? AND id=?', [franchiseId, storeId]);
     } finally {
       connection.end();
     }
