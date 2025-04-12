@@ -26,6 +26,9 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
+      - name: Add mask
+        run: |
+          echo "::add-mask::${{ secrets.ARTIFACT_URL_STUB }}"
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -143,7 +146,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: 'jwt-pizza-service'
+          ECR_REPOSITORY: "jwt-pizza-service"
         run: |
           docker build --platform=linux/arm64 -t $ECR_REGISTRY/$ECR_REPOSITORY --push .
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >>  $GITHUB_OUTPUT
