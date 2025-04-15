@@ -33,7 +33,7 @@ Names: Aiden Martin & Peter Fullmer
 | Classification | Security Misconfiguration                                                                                                                                               |
 | Severity       | 3                                                                                                                                                                       |
 | Description    | Hit pizza-service.amartin.click/api/docs to obtain various curl commands that were used to insert default credentials. Credentials still worked, allowing admin access. |
-| Images         | ![Pasted image](Pasted%20image%20250415141937.png)                                                                                                                      |
+| Images         | ![Pasted image](Pasted%20image%2020250415141937.png)                                                                                                                      |
 | Corrections    | Remove the “example” curl text above the api endpoints in my service code.                                                                                              |
 
 ## ----------- Peer Attack - Peter attacking Aiden -----------
