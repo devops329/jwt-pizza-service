@@ -11,7 +11,7 @@ Names: Aiden Martin & Peter Fullmer
 | Classification | Broken Access Control                                   |
 | Severity       | 1                                                       |
 | Description    | Found config file by downloading GitHub action artifact |
-| Images         | ![Pasted image](Pasted%20image%20250415140309.png)      |
+| Images         | ![Pasted image](Pasted%20image%2020250415140309.png)    |
 | Corrections    | Make GitHub repo private                                |
 
 | Item           | Result                                             |
