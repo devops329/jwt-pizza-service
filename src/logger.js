@@ -6,6 +6,7 @@ class Logger {
     res.send = (resBody) => {
       const logData = {
         authorized: !!req.headers.authorization,
+        user: req.user ? { id: req.user.id, email: req.user.email } : null,
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
@@ -59,9 +60,13 @@ class Logger {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.logging.accountId}:${config.logging.apiKey}`,
       },
-    }).then((res) => {
-      if (!res.ok) console.log("Failed to send log to Grafana");
-    });
+    })
+      .then((res) => {
+        if (!res.ok) console.log("Failed to send log to Grafana");
+      })
+      .catch((error) => {
+        console.log("Error sending log to Grafana:", error.message);
+      });
   }
 }
 module.exports = new Logger();
