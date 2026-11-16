@@ -1,5 +1,6 @@
 const express = require("express");
 const metrics = require("./metrics.js");
+const logger = require("./logger.js");
 const { authRouter, setAuthUser } = require("./routes/authRouter.js");
 const orderRouter = require("./routes/orderRouter.js");
 const franchiseRouter = require("./routes/franchiseRouter.js");
@@ -10,6 +11,7 @@ const config = require("./config.js");
 const app = express();
 app.use(express.json());
 app.use(setAuthUser);
+app.use(logger.httpLogger);
 app.use(metrics.requestTracker);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
