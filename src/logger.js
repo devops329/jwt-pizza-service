@@ -1,12 +1,17 @@
+const { AsyncLocalStorage } = require("async_hooks");
 const config = require("./config");
+
+const requestContext = new AsyncLocalStorage();
 
 class Logger {
   httpLogger = (req, res, next) => {
+    const user = req.user ? { id: req.user.id, email: req.user.email } : null;
+
     let send = res.send;
     res.send = (resBody) => {
       const logData = {
         authorized: !!req.headers.authorization,
-        user: req.user ? { id: req.user.id, email: req.user.email } : null,
+        user,
         path: req.originalUrl,
         method: req.method,
         statusCode: res.statusCode,
@@ -18,10 +23,14 @@ class Logger {
       res.send = send;
       return res.send(resBody);
     };
-    next();
+    requestContext.run({ user }, next);
   };
 
   log(level, type, logData) {
+    if (logData.user === undefined) {
+      logData = { ...logData, user: requestContext.getStore()?.user ?? null };
+    }
+
     const labels = {
       component: config.logging.source,
       level: level,
