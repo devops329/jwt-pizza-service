@@ -26,6 +26,18 @@ class Logger {
     requestContext.run({ user }, next);
   };
 
+  errorLogger = (err, req, res, next) => {
+    const statusCode = err.statusCode ?? 500;
+    this.log(this.statusToLogLevel(statusCode), "exception", {
+      message: err.message,
+      statusCode,
+      path: req.originalUrl,
+      method: req.method,
+      stack: err.stack,
+    });
+    next(err);
+  };
+
   log(level, type, logData) {
     if (logData.user === undefined) {
       logData = { ...logData, user: requestContext.getStore()?.user ?? null };
