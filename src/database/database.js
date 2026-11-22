@@ -10,10 +10,14 @@ class DB {
     this.initialized = this.initializeDatabase();
   }
 
-  async getMenu() {
+  async getMenu(search) {
     const connection = await this.getConnection();
     try {
-      const rows = await this.query(connection, `SELECT * FROM menu`);
+      let sql = `SELECT * FROM menu`;
+      if (search) {
+        sql += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%'`;
+      }
+      const rows = await this.query(connection, sql);
       return rows;
     } finally {
       connection.end();

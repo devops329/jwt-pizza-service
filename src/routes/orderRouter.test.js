@@ -55,3 +55,27 @@ describe('addMenuItem', () => {
     expect(res.body.message).toBe('unable to add menu item');
   });
 });
+
+describe('getMenu', () => {
+  test('search returns only matching menu items', async () => {
+    const admin = await createAdminUser();
+    const adminToken = (await loginUser(admin)).token;
+
+    const title = randomName();
+    const item = { title, description: 'A searchable pizza', image: 'pizza9.png', price: 0.0001 };
+    await request(app).put('/api/order/menu').set('Authorization', `Bearer ${adminToken}`).send(item);
+
+    const res = await request(app).get(`/api/order/menu?search=${title}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].title).toBe(title);
+  });
+
+  test('no search returns the full menu', async () => {
+    const res = await request(app).get('/api/order/menu');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+});

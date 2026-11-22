@@ -17,6 +17,13 @@ orderRouter.docs = [
     response: [{ id: 1, title: 'Veggie', image: 'pizza1.png', price: 0.0038, description: 'A garden of delight' }],
   },
   {
+    method: 'GET',
+    path: '/api/order/menu?search=veg',
+    description: 'Search the pizza menu by title or description',
+    example: `curl localhost:3000/api/order/menu?search=veg`,
+    response: [{ id: 1, title: 'Veggie', image: 'pizza1.png', price: 0.0038, description: 'A garden of delight' }],
+  },
+  {
     method: 'PUT',
     path: '/api/order/menu',
     requiresAuth: true,
@@ -46,7 +53,7 @@ orderRouter.docs = [
 orderRouter.get(
   '/menu',
   asyncHandler(async (req, res) => {
-    res.send(await DB.getMenu());
+    res.send(await DB.getMenu(req.query.search));
   })
 );
 
