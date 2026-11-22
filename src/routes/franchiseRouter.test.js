@@ -140,3 +140,10 @@ test('admin deletes a franchise', async () => {
   expect(res.status).toBe(200);
   expect(res.body.message).toBe('franchise deleted');
 });
+
+// Deleting a franchise requires a token
+test('deleting a franchise without a token is unauthorized', async () => {
+  const franchise = await createFranchise(adminUser.email);
+  const res = await request(app).delete(`/api/franchise/${franchise.id}`);
+  expect(res.status).toBe(401);
+});
